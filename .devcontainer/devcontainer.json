@@ -1,0 +1,88 @@
+{
+	"name": "OpenCloudHub - AI Lightning Example",
+	"build": {
+		"context": "..",
+		"dockerfile": "../Dockerfile",
+		"target": "dev"
+	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace/project,type=bind", // Mount the local workspace folder to /workspace/project in the container
+	"workspaceFolder": "/workspace/project",
+	"runArgs": [
+		"--env-file",
+		"./.env",
+		"--network",
+		"host",
+		"--gpus",
+		"all"
+	], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
+	"postCreateCommand": "pre-commit run --all", // Install and run pre-commit hooks after creating the container
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/dhoeric/features/hadolint:1": {}
+	}, // Install GitHub CLI and Docker CLI inside the container
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				// Code completion and AI
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				// Code formatting and linting
+				"ms-azuretools.vscode-docker",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff",
+				"exiasr.hadolint",
+				"ms-vscode.makefile-tools",
+				"nhoizey.gremlins",
+				"timonwong.shellcheck",
+				// Project management
+				"Gruntfuggly.todo-tree",
+				"eamodio.gitlens",
+				// Visuals
+				"oderwat.indent-rainbow"
+			],
+			"settings": {
+				"editor.tabSize": 4,
+				"editor.autoIndent": "advanced",
+				"editor.formatOnPaste": true,
+				"editor.formatOnSave": true,
+				"[python]": {
+					"editor.codeActionsOnSave": {
+						"source.fixAll": "always",
+						"source.organizeImports": "always"
+					},
+					"editor.defaultFormatter": "charliermarsh.ruff"
+				},
+				"github.copilot.nextEditSuggestions.enabled": true,
+				"jupyter.notebookFileRoot": "${workspaceFolder}",
+				"notebook.formatOnSave.enabled": true,
+				"notebook.codeActionsOnSave": {
+					"notebook.source.fixAll": "explicit",
+					"notebook.source.organizeImports": "explicit"
+				},
+				"python.terminal.activateEnvInCurrentTerminal": true,
+				"python.terminal.activateEnvironment": true,
+				"pythonTestExplorer.testFramework": "pytest",
+				"python.analysis.extraPaths": [
+					"${workspaceFolder}"
+				],
+				"ruff.enable": true,
+				"ruff.lint.enable": true,
+				// Intent rainbow
+				"indentRainbow.indicatorStyle": "light",
+				"indentRainbow.lightIndicatorStyleLineWidth": 1,
+				"indentRainbow.colors": [
+					"rgba(255,255,64,0.3)",
+					"rgba(127,255,127,0.3)",
+					"rgba(255,127,255,0.3)",
+					"rgba(79,236,236,0.3)"
+				],
+				// The indent color if the number of spaces is not a multiple of "tabSize".
+				"indentRainbow.errorColor": "rgba(128,32,32,0.6)"
+			}
+		}
+	}
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "vscode"
+}

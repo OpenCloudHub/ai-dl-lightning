@@ -1,0 +1,13 @@
+.git/
+.venv/
+mlruns/
+mlartifacts/
+notebooks/
+*.pyc
+__pycache__/
+data/FashionMNIST/
+data/cifar-10-*
+data/*.csv
+data/*.parquet
+data/*.json
+data/*.pkl

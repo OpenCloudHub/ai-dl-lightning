@@ -1,0 +1,20 @@
+[project]
+name = "ai-dl-lightning"
+version = "0.1.0"
+description = "Example model training and serving with ray, mlflow, pytorch lightning and fastapi"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.1",
+    "lightning>=2.5.6",
+    "mlflow>=3.2.0",
+    "pydantic-settings>=2.12.0",
+    "ray[data,serve,train,tune]>=2.48.0",
+    "torchmetrics>=1.8.2",
+    "torchvision>=0.24.0",
+]
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "ruff>=0.12.8",
+]
