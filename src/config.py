@@ -9,7 +9,7 @@ class BaseConfig(BaseSettings):
     # Storage paths
     ray_storage_path: str = "/tmp/ray_results"
     # For workflow tagging
-    argo_workflow_uid: str | None = None
+    argo_workflow_uid: str | None = "TEST"
 
 
 # Singleton config instance
