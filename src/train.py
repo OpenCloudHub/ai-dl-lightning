@@ -149,7 +149,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
 # ========= Main Entry Point ========== #
 def main():
     """Main entry point for training."""
-    # Parse agruments
+    # Parse arguments
     parser = argparse.ArgumentParser(description="Fashion MNIST Training (Ray Data)")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)

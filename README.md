@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 <h2 id="about">🍷 About</h2>
 
-This repository demonstrates an example implementation for classification using pytorch lighning and the FashinMNIST dataset. It showcases combining machine learning practices including experiment tracking, model registration, and containerized training and deployment and serves as demonstration within the OpenCloudHub project.\\
+This repository demonstrates an example implementation for classification using pytorch lightning and the FashinMNIST dataset. It showcases combining machine learning practices including experiment tracking, model registration, and containerized training and deployment and serves as demonstration within the OpenCloudHub project.\\
 
 ______________________________________________________________________
 
@@ -69,7 +69,7 @@ ______________________________________________________________________
       cd ai-ml-lighting
    ```
 
-2. **Open in DevContainer** (Recommended)
+1. **Open in DevContainer** (Recommended)
 
    VSCode: `Ctrl+Shift+P` → `Dev Containers: Rebuild and Reopen in Container`
 
@@ -83,7 +83,7 @@ ______________________________________________________________________
       uv sync --dev
    ```
 
-3. **Start local MLflow tracking server**
+1. **Start local MLflow tracking server**
 
    ```bash
       mlflow server --host 0.0.0.0 --port 8081
@@ -91,7 +91,7 @@ ______________________________________________________________________
 
    Access at `http://localhost:8081`
 
-4. **Start local Ray cluster**
+1. **Start local Ray cluster**
 
    ```bash
       ray start --head
@@ -115,7 +115,6 @@ or use the Job API like we would do in practise too
 RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python src/train.py
 ```
 
-
 ### Model Serving
 
 Ensure you have a trained model to load either from local folder or from mlflow by setting the 'MODEL_URI' environment variable.
@@ -125,7 +124,9 @@ Ensure you have a trained model to load either from local folder or from mlflow 
 ```bash
 serve run src.serve:app model_uri="models:/ci.fashion-mnist-classifier/1" --reload
 ```
+
 or even better and more production ready, run:
+
 ```bash
 serve build src.serve:app -o src/serve_config.yaml
 serve deploy src/serve_config.yaml

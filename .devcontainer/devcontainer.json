@@ -7,14 +7,7 @@
 	},
 	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace/project,type=bind", // Mount the local workspace folder to /workspace/project in the container
 	"workspaceFolder": "/workspace/project",
-	"runArgs": [
-		"--env-file",
-		"./.env",
-		"--network",
-		"host",
-		"--gpus",
-		"all"
-	], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
+	"runArgs": ["--env-file", "./.env", "--network", "host", "--gpus", "all"], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
 	"postCreateCommand": "pre-commit run --all", // Install and run pre-commit hooks after creating the container
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
@@ -64,9 +57,7 @@
 				"python.terminal.activateEnvInCurrentTerminal": true,
 				"python.terminal.activateEnvironment": true,
 				"pythonTestExplorer.testFramework": "pytest",
-				"python.analysis.extraPaths": [
-					"${workspaceFolder}"
-				],
+				"python.analysis.extraPaths": ["${workspaceFolder}"],
 				"ruff.enable": true,
 				"ruff.lint.enable": true,
 				// Intent rainbow

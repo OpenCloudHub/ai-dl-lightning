@@ -43,7 +43,7 @@ ENV ENVIRONMENT=development
 
 #==============================================================================#
 # Stage: Training - Ray base with training code
-# Serves both for training and serving, could be seperated if needed
+# Serves both for training and serving, could be separated if needed
 FROM rayproject/ray:${RAY_VERSION}-${RAY_PY_TAG} AS prod
 
 WORKDIR /workspace/project
@@ -60,7 +60,3 @@ ENV VIRTUAL_ENV="/workspace/project/.venv" \
     PATH="/workspace/project/.venv/bin:$PATH" \
     PYTHONPATH="/workspace/project" \
     ENVIRONMENT=production
-
-# Set MLflow tracking URI and model details as environment variables
-ENV MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
-    MODEL_URI=${MODEL_URI}
