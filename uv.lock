@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "ai-ml-lightning"
+name = "ai-dl-lightning"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
