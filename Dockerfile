@@ -46,9 +46,6 @@ ENV ENVIRONMENT=development
 # Serves both for training and serving, could be seperated if needed
 FROM rayproject/ray:${RAY_VERSION}-${RAY_PY_TAG} AS prod
 
-ARG MLFLOW_TRACKING_URI
-ARG MODEL_URI
-
 WORKDIR /workspace/project
 
 COPY --from=uv /usr/local/bin/uv /usr/local/bin/uv

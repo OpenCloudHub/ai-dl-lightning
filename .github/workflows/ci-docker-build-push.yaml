@@ -6,7 +6,7 @@ on:
       - 'Dockerfile'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '.github/workflows/ci-build-training-image.yaml'
+      - '.github/workflows/ci-docker-build-push.yaml'
       - 'src/**'
 
 jobs:
