@@ -25,7 +25,7 @@ app = FastAPI(
 class PredictionRequest(BaseModel):
     images: List[List[int]] | List[List[List[int]]] = Field(
         ...,
-        description="Batch of images. Each: either 784 ints (flattened) or 28x28 array [0-255]",
+        description="Batch of images. Each: either 784 ints (flattened) or 28x28 array [0-255].",
     )
 
 
