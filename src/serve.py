@@ -16,7 +16,7 @@ from src.data import normalize_images
 FASHION_MNIST_CLASSES = FashionMNIST.classes
 
 app = FastAPI(
-    title="👕 Fashion MNIST Classifier API",
+    title="👕 Fashion MNIST Classifier Demo API",
     description="Fashion MNIST classification using Ray Serve + MLflow",
     version="1.0.0",
 )
