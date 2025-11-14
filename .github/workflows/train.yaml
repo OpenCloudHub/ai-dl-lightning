@@ -1,4 +1,4 @@
-name: Train Model
+name: Submit Model Training
 on:
   workflow_dispatch:
     inputs:
@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: 'python src/train.py'
+      dvc_data_version:
+        description: 'DVC Registry tag for data version (e.g "v0.1.1")'
+        required: true
+        type: string
+        default: "v0.1.1"
       training_args:
         description: 'Additional training arguments'
         required: false
@@ -55,6 +60,7 @@ jobs:
       repo_name: ${{ github.event.repository.name }}
       model_name: "fashion-mnist-classifier"
       experiment_name: "fashion-mnist"
+      dvc_data_version: ${{ inputs.dvc_data_version }}
       compute_type: ${{ inputs.compute_type }}
       approval_mode: ${{ inputs.approval_mode }}
       comparison_metric: ${{ inputs.comparison_metric }}
