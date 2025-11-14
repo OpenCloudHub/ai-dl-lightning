@@ -237,7 +237,10 @@ def main():
     parser = argparse.ArgumentParser(description="Fashion MNIST Training (Ray Data)")
     parser.add_argument("--run-name", type=str, help="MLflow run name")
     parser.add_argument(
-        "--data-version", type=str, default="v0.1.0", help="DVC data version to use"
+        "--data-version",
+        type=str,
+        default=BASE_CNFG.dvc_data_version,
+        help="DVC data version to use",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)
