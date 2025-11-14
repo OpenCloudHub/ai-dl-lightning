@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 import dvc.api
 import numpy as np
+import pyarrow.fs as pafs
 import ray
 from numpy import ndarray
 from ray.data import Dataset
@@ -79,7 +80,6 @@ def load_data(
         f"Loading data version '{version}' from DVC repo '{BASE_CNFG.dvc_repo}'"
     )
     log_section(f"Loading Data Version {version}", "📦")
-
     logger.info(f"DVC repo: [cyan]{BASE_CNFG.dvc_repo}[/cyan]")
 
     # Get URLs from DVC
@@ -93,10 +93,12 @@ def load_data(
         repo=BASE_CNFG.dvc_repo,
         rev=version,
     )
+
     metadata_content = dvc.api.read(
         BASE_CNFG.dvc_metrics_path, repo=BASE_CNFG.dvc_repo, rev=version
     )
     metadata = json.loads(metadata_content)
+
     logger.info(
         f"Loaded dataset: [bold]{metadata['dataset']['name']}[/bold] [green]({version})[/green]"
     )
@@ -104,13 +106,22 @@ def load_data(
     # Extract normalization statistics from metadata
     mean = metadata["metrics"]["train"]["pixel_mean"]
     std = metadata["metrics"]["train"]["pixel_std"]
+
     logger.info(
         f"Normalization: mean=[yellow]{mean:.4f}[/yellow], std=[yellow]{std:.4f}[/yellow]"
     )
 
-    # Load datasets
-    train_ds = ray.data.read_parquet(train_path)
-    val_ds = ray.data.read_parquet(val_path)
+    # Configure S3 filesystem for Ray with SSL verification disabled
+    s3_fs = pafs.S3FileSystem(
+        endpoint_override="minio-api.storage.internal.opencloudhub.org:443",
+        scheme="https",
+        anonymous=False,
+        tls_skip_verify=True,
+    )
+
+    # Load datasets with custom filesystem
+    train_ds = ray.data.read_parquet(train_path, filesystem=s3_fs)
+    val_ds = ray.data.read_parquet(val_path, filesystem=s3_fs)
 
     if limit_train:
         train_ds = train_ds.limit(limit_train)

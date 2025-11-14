@@ -11,7 +11,7 @@ on:
         description: 'DVC Registry tag for data version (e.g "v0.1.1")'
         required: true
         type: string
-        default: "v0.1.1"
+        default: 'v0.1.1'
       training_args:
         description: 'Additional training arguments'
         required: false
