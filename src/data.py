@@ -1,12 +1,14 @@
 # src/data.py
 import json
+import os
 from typing import Optional, Tuple
 
 import dvc.api
 import numpy as np
-import pyarrow.fs as pafs
 import ray
+import s3fs
 from numpy import ndarray
+from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset
 
 from src._utils.logging import get_logger, log_section
@@ -111,17 +113,23 @@ def load_data(
         f"Normalization: mean=[yellow]{mean:.4f}[/yellow], std=[yellow]{std:.4f}[/yellow]"
     )
 
-    # Configure S3 filesystem for Ray with SSL verification disabled
-    s3_fs = pafs.S3FileSystem(
-        endpoint_override="minio-api.storage.internal.opencloudhub.org:443",
-        scheme="https",
-        anonymous=False,
-        tls_skip_verify=True,
+    # Configure S3 filesystem using s3fs with SSL verification disabled
+    s3_client = s3fs.S3FileSystem(
+        anon=False,
+        key=os.getenv("AWS_ACCESS_KEY_ID"),
+        secret=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        endpoint_url=os.getenv("AWS_ENDPOINT_URL"),
+        client_kwargs={
+            "verify": False,  # Disable SSL verification for self-signed certs
+        },
     )
 
+    # Wrap with PyArrow filesystem
+    pa_fs = PyFileSystem(FSSpecHandler(s3_client))
+
     # Load datasets with custom filesystem
-    train_ds = ray.data.read_parquet(train_path, filesystem=s3_fs)
-    val_ds = ray.data.read_parquet(val_path, filesystem=s3_fs)
+    train_ds = ray.data.read_parquet(train_path, filesystem=pa_fs)
+    val_ds = ray.data.read_parquet(val_path, filesystem=pa_fs)
 
     if limit_train:
         train_ds = train_ds.limit(limit_train)
