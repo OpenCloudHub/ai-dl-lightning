@@ -7,6 +7,10 @@
 	},
 	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace/project,type=bind", // Mount the local workspace folder to /workspace/project in the container
 	"workspaceFolder": "/workspace/project",
+	// Share dvc repo storage across multiple devcontainers for local testing, adjust path as needed
+	"mounts": [
+		"source=${localEnv:HOME}/Development/projects/opencloudhub/dev/shared-data/,target=/workspace/shared-data,type=bind"
+	],
 	"runArgs": ["--env-file", "./.env", "--network", "host", "--gpus", "all"], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
 	"postCreateCommand": "pre-commit run --all", // Install and run pre-commit hooks after creating the container
 	"features": {

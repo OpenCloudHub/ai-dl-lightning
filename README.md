@@ -122,13 +122,13 @@ Ensure you have a trained model to load either from local folder or from mlflow 
 **Start the serving application:**
 
 ```bash
-serve run src.serve:app model_uri="models:/ci.fashion-mnist-classifier/1" --reload
+serve run src.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
 ```
 
 or even better and more production ready, run:
 
 ```bash
-serve build src.serve:app -o src/serve_config.yaml
+serve build src.serve:app_builder -o src/serve_config.yaml
 serve deploy src/serve_config.yaml
 ```
 

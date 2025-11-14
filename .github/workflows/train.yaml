@@ -6,7 +6,7 @@ on:
         description: 'Training script entrypoint'
         required: false
         type: string
-        default: 'python src/training/train.py'
+        default: 'python src/train.py'
       training_args:
         description: 'Additional training arguments'
         required: false

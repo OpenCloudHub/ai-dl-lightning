@@ -42,7 +42,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV ENVIRONMENT=development
 
 #==============================================================================#
-# Stage: Training - Ray base with training code
 # Serves both for training and serving, could be separated if needed
 FROM rayproject/ray:${RAY_VERSION}-${RAY_PY_TAG} AS prod
 

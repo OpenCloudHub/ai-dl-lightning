@@ -5,11 +5,13 @@ description = "Example model training and serving with ray, mlflow, pytorch ligh
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "dvc[s3]>=3.64.0",
     "fastapi>=0.116.1",
     "lightning>=2.5.6",
     "mlflow>=3.2.0",
     "pydantic-settings>=2.12.0",
     "ray[data,serve,train,tune]>=2.48.0",
+    "rich>=14.2.0",
     "torchmetrics>=1.8.2",
     "torchvision>=0.24.0",
 ]

@@ -11,7 +11,10 @@ from ray import serve
 from ray.serve import Application
 from torchvision.datasets import FashionMNIST
 
-from src.data import normalize_images
+from src._utils.logging import get_logger
+from src.data import get_normalization_params, normalize_images
+
+logger = get_logger(__name__)
 
 FASHION_MNIST_CLASSES = FashionMNIST.classes
 
@@ -83,33 +86,60 @@ class FashionMNISTClassifier:
         self.class_names = FASHION_MNIST_CLASSES
         self.model = None
         self.model_info: ModelInfo | None = None
+        self.data_version: str | None = None
+        self.norm_mean: float | None = None
+        self.norm_std: float | None = None
 
         # Load model if URI provided at init
         if model_uri:
             self._load_model(model_uri)
 
     def _load_model(self, model_uri: str):
-        """Internal method to load model and metadata."""
-        print(f"📦 Loading model from: {model_uri}")
+        """Internal method to load model and fetch normalization parameters."""
+        logger.info(f"📦 Loading model from: {model_uri}")
+
+        # Get model info from MLflow
+        info = mlflow.models.get_model_info(model_uri)
+
+        # Fetch the data version from the model's training run
+        client = mlflow.tracking.MlflowClient()
+        run = client.get_run(info.run_id)
+
+        # Get data version from run parameters
+        self.data_version = run.data.tags.get("dvc_data_version")
+        if not self.data_version:
+            raise ValueError(
+                f"Model at {model_uri} was trained without dvc_data_version parameter. "
+                "Cannot determine which normalization to use."
+            )
+
+        logger.info(f"📊 Using normalization from DVC version: {self.data_version}")
+
+        # Fetch normalization parameters from DVC
+        self.norm_mean, self.norm_std = get_normalization_params(self.data_version)
+        logger.info(
+            f"   Normalization: mean={self.norm_mean:.4f}, std={self.norm_std:.4f}"
+        )
 
         # Load the model
         self.model = mlflow.pytorch.load_model(model_uri, map_location=self.device)
         self.model.eval()
 
-        # Get model info from MLflow
-        info = mlflow.models.get_model_info(model_uri)
-
-        # Build ModelInfo with the URI we used to load
+        # Build ModelInfo
         self.model_info = ModelInfo(
             model_uri=model_uri,
             model_uuid=info.model_uuid,
             run_id=info.run_id,
+            data_version=self.data_version,
+            normalization_mean=self.norm_mean,
+            normalization_std=self.norm_std,
             model_signature=str(info.signature) if info.signature else None,
         )
 
-        print(f"✅ Model loaded successfully on device: {self.device}")
-        print(f"   Model UUID: {self.model_info.model_uuid}")
-        print(f"   Run ID: {self.model_info.run_id}")
+        logger.info(f"✅ Model loaded successfully on device: {self.device}")
+        logger.info(f"   Model UUID: {self.model_info.model_uuid}")
+        logger.info(f"   Run ID: {self.model_info.run_id}")
+        logger.info(f"   Data version: {self.data_version}")
 
     def reconfigure(self, config: dict) -> None:
         """Handle model updates without restarting the deployment.
@@ -120,22 +150,24 @@ class FashionMNISTClassifier:
         new_model_uri = config.get("model_uri")
 
         if not new_model_uri:
-            print("⚠️ No model_uri provided in config")
+            logger.warning("⚠️ No model_uri provided in config")
             return
 
         # If no model loaded yet (first time), load it
         if self.model is None or self.model_info is None:
-            print("🆕 Initial model load")
+            logger.info("🆕 Initial model load")
             self._load_model(new_model_uri)
             return
 
         # If model already loaded, check if URI changed
         if new_model_uri == self.model_info.model_uri:
-            print("ℹ️ No model update needed (same URI)")
+            logger.info("ℹ️ No model update needed (same URI)")
             return
 
         # URI changed, reload model
-        print(f"🔄 Updating model from {self.model_info.model_uri} to {new_model_uri}")
+        logger.info(
+            f"🔄 Updating model from {self.model_info.model_uri} to {new_model_uri}"
+        )
         self._load_model(new_model_uri)
 
     @app.get("/", response_model=HealthResponse, summary="Health Check")
@@ -187,7 +219,9 @@ class FashionMNISTClassifier:
                 )
 
             # Apply the SAME normalization as training (reusing normalize_images!)
-            normalized = normalize_images(arr)  # -> (B, 1, 28, 28) float32
+            normalized = normalize_images(
+                arr, mean=self.norm_mean, std=self.norm_std
+            )  # -> (B, 1, 28, 28) float32
 
             # Convert to torch and move to device
             batch = torch.from_numpy(normalized).to(self.device)
@@ -219,7 +253,7 @@ class FashionMNISTClassifier:
         except HTTPException:
             raise
         except Exception as e:
-            print(f"❌ Prediction error: {e}")
+            logger.error(f"❌ Prediction error: {e}")
             raise HTTPException(500, f"Prediction failed: {e}")
 
 
