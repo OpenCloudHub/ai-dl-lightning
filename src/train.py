@@ -239,7 +239,8 @@ def main():
     parser.add_argument(
         "--data-version",
         type=str,
-        help="DVC data version to use",
+        required=True,  # REQUIRED - passed via training_args in workflow
+        help="DVC data version to use (e.g., v0.1.1)",
     )
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)
