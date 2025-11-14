@@ -146,8 +146,6 @@ def load_data(
     train_ds = train_ds.map(normalize_row)
     val_ds = val_ds.map(normalize_row)
 
-    logger.success(
-        f"✨ Data loaded: {train_ds.count()} train, {val_ds.count()} val samples"
-    )
+    logger.success("✨ Data loaded")
 
     return train_ds, val_ds, metadata

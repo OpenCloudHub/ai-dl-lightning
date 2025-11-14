@@ -14,9 +14,9 @@ class BaseConfig(BaseSettings):
     dvc_val_data_path: str = "data/fashion-mnist/processed/val/val.parquet"
     dvc_metrics_path: str = "data/fashion-mnist/processed/metadata.json"
 
-    # MLflow tags for workflow tagging
-    argo_workflow_uid: str
-    docker_image_tag: str
+    # Optional: Workflow metadata (only set during training in Argo)
+    argo_workflow_uid: str | None = None
+    docker_image_tag: str | None = None
 
 
 # Singleton config instance

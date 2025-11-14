@@ -177,6 +177,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
                 use_gpu=torch.cuda.is_available()
                 and torch.cuda.device_count() >= num_workers,
             ),
+            # TODO: set shared temp path for distributed training
             run_config=RunConfig(
                 name=train_driver_cnfg.get("train_loop_config").get(
                     "run_name", "torch_train_run"

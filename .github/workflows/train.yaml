@@ -8,10 +8,10 @@ on:
         type: string
         default: 'python src/train.py'
       dvc_data_version:
-        description: 'DVC Registry tag for data version (e.g "v0.1.1")'
+        description: 'DVC Registry tag for data version (e.g "fashion-mnist-v0.1.1")'
         required: true
         type: string
-        default: 'v0.1.1'
+        default: 'fashion-mnist-v0.1.1'
       training_args:
         description: 'Additional training arguments'
         required: false
