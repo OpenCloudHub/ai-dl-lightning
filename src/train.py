@@ -213,7 +213,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
             logger.info(f"Logging model to MLflow run: [cyan]{mlflow_run_id}[/cyan]")
             mlflow.pytorch.log_model(
                 pytorch_model=model,
-                artifact_path="model",
+                name="model",
                 registered_model_name=BASE_CNFG.mlflow_registered_model_name,
                 input_example=sample_input,
             )
@@ -239,7 +239,6 @@ def main():
     parser.add_argument(
         "--data-version",
         type=str,
-        default=BASE_CNFG.dvc_data_version,
         help="DVC data version to use",
     )
     parser.add_argument("--batch-size", type=int, default=128)

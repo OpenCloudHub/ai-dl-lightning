@@ -54,6 +54,7 @@ class ModelInfo(BaseModel):
     model_uri: str = Field(..., description="URI of the model used")
     model_uuid: str = Field(..., description="MLflow model UUID")
     run_id: str = Field(..., description="MLflow run ID associated with the model")
+    data_version: str = Field(..., description="DVC data version used for training")
     model_signature: str | None = Field(None, description="MLflow model signature")
     expected_input_shape: str = Field(
         "(batch_size, 28, 28) or (batch_size, 784)",
@@ -131,8 +132,6 @@ class FashionMNISTClassifier:
             model_uuid=info.model_uuid,
             run_id=info.run_id,
             data_version=self.data_version,
-            normalization_mean=self.norm_mean,
-            normalization_std=self.norm_std,
             model_signature=str(info.signature) if info.signature else None,
         )
 
