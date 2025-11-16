@@ -21,7 +21,7 @@ on:
         description: 'Docker image tag (latest, main-abc1234, etc.)'
         required: false
         type: string
-        default: 'latest
+        default: 'latest'
       compute_type:
         description: 'Compute configuration'
         required: true
@@ -74,7 +74,6 @@ jobs:
       comparison_metric: ${{ inputs.comparison_metric }}
       comparison_higher_is_better: ${{ inputs.higher_is_better}}
       comparison_threshold: ${{ inputs.comparison_threshold }}
-      
     secrets: inherit
 
 
