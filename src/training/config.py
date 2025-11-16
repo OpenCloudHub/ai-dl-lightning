@@ -16,7 +16,7 @@ class TrainingConfig(BaseSettings):
     dvc_repo: str = "https://github.com/OpenCloudHub/data-registry"
     dvc_train_data_path: str = "data/fashion-mnist/processed/train/train.parquet"
     dvc_val_data_path: str = "data/fashion-mnist/processed/val/val.parquet"
-    dvc_metrics_path: str = "data/fashion-mnist/processed/metadata.json"
+    dvc_metrics_path: str = "data/fashion-mnist/metadata.json"
 
 
 # Singleton instances
