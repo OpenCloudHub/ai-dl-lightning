@@ -72,7 +72,7 @@ jobs:
       compute_type: ${{ inputs.compute_type }}
       approval_mode: ${{ inputs.approval_mode }}
       comparison_metric: ${{ inputs.comparison_metric }}
-      comparison_higher_is_better: ${{ inputs.higher_is_better}}
+      comparison_higher_is_better: ${{ inputs.comparison_higher_is_better}}
       comparison_threshold: ${{ inputs.comparison_threshold }}
     secrets: inherit
 
