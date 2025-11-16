@@ -246,6 +246,9 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
                 name="model",
                 registered_model_name=TRAINING_CONFIG.mlflow_registered_model_name,
                 input_example=sample_input,
+                code_paths=[
+                    "src/training/model.py"
+                ],  # Include model definition for unpickeling later
             )
             logger.success(
                 f"✨ Model registered as [bold]{TRAINING_CONFIG.mlflow_registered_model_name}[/bold]"

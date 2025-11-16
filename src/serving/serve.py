@@ -24,9 +24,6 @@ from src.serving.schemas import (
 )
 from src.training.data import get_normalization_params, normalize_images
 
-# Import the model class to ensure it's available for unpickling
-from src.training.model import SimpleImageClassifier  # noqa: F401
-
 logger = get_logger(__name__)
 
 app = FastAPI(
