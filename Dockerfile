@@ -53,9 +53,12 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
-COPY src/ ./src/
+COPY --chown=ray:users src/ /workspace/project/src/
 
+# Set environment variables for production
+# Ensure both /workspace/project and /workspace/project/src are in PYTHONPATH
+# This allows both "from src.training.model import X" and "import src.training.model"
 ENV VIRTUAL_ENV="/workspace/project/.venv" \
     PATH="/workspace/project/.venv/bin:$PATH" \
-    PYTHONPATH="/workspace/project" \
+    PYTHONPATH="/workspace/project:/workspace/project/src" \
     ENVIRONMENT=production

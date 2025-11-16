@@ -9,6 +9,7 @@ from pydantic import AfterValidator, BaseModel, Field
 from torchvision.datasets import FashionMNIST
 
 from src._utils.logging import get_logger
+from src.serving.config import SERVING_CONFIG
 
 logger = get_logger(__name__)
 
@@ -50,7 +51,7 @@ class PredictionRequest(BaseModel):
         AfterValidator(validate_images),
         Field(
             min_length=1,
-            max_length=100,  # Prevent DOS attacks with huge batches
+            max_length=SERVING_CONFIG.request_max_length,  # Prevent DOS attacks with huge batches
             description="List of grayscale images. Each image can be either:\n"
             "- Flattened: 784 integers (28x28 flattened)\n"
             "- 2D: 28x28 array of integers\n"

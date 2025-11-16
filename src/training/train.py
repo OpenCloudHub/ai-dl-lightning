@@ -243,7 +243,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
             logger.info(f"Logging model to MLflow run: [cyan]{mlflow_run_id}[/cyan]")
             mlflow.pytorch.log_model(
                 pytorch_model=model,
-                name="model",
+                artifact_path="model",
                 registered_model_name=TRAINING_CONFIG.mlflow_registered_model_name,
                 input_example=sample_input,
                 code_paths=[
