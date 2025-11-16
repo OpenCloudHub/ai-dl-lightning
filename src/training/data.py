@@ -12,7 +12,7 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset
 
 from src._utils.logging import get_logger, log_section
-from src.config import BASE_CNFG
+from src.training.config import TRAINING_CONFIG
 
 logger = get_logger(__name__)
 
@@ -53,8 +53,8 @@ def get_normalization_params(version: str) -> Tuple[float, float]:
         Tuple of (mean, std) for normalization
     """
     metadata_content = dvc.api.read(
-        BASE_CNFG.dvc_metrics_path,
-        repo=BASE_CNFG.dvc_repo,
+        TRAINING_CONFIG.dvc_metrics_path,
+        repo=TRAINING_CONFIG.dvc_repo,
         rev=version,
     )
     metadata = json.loads(metadata_content)
@@ -79,25 +79,25 @@ def load_data(
         Tuple of (train_ds, val_ds, metadata)
     """
     logger.info(
-        f"Loading data version '{version}' from DVC repo '{BASE_CNFG.dvc_repo}'"
+        f"Loading data version '{version}' from DVC repo '{TRAINING_CONFIG.dvc_repo}'"
     )
     log_section(f"Loading Data Version {version}", "📦")
-    logger.info(f"DVC repo: [cyan]{BASE_CNFG.dvc_repo}[/cyan]")
+    logger.info(f"DVC repo: [cyan]{TRAINING_CONFIG.dvc_repo}[/cyan]")
 
     # Get URLs from DVC
     train_path = dvc.api.get_url(
-        BASE_CNFG.dvc_train_data_path,
-        repo=BASE_CNFG.dvc_repo,
+        TRAINING_CONFIG.dvc_train_data_path,
+        repo=TRAINING_CONFIG.dvc_repo,
         rev=version,
     )
     val_path = dvc.api.get_url(
-        BASE_CNFG.dvc_val_data_path,
-        repo=BASE_CNFG.dvc_repo,
+        TRAINING_CONFIG.dvc_val_data_path,
+        repo=TRAINING_CONFIG.dvc_repo,
         rev=version,
     )
 
     metadata_content = dvc.api.read(
-        BASE_CNFG.dvc_metrics_path, repo=BASE_CNFG.dvc_repo, rev=version
+        TRAINING_CONFIG.dvc_metrics_path, repo=TRAINING_CONFIG.dvc_repo, rev=version
     )
     metadata = json.loads(metadata_content)
 
@@ -125,6 +125,7 @@ def load_data(
     )
 
     # Wrap with PyArrow filesystem
+    # TODO: cant we do it directly with s3fs?
     pa_fs = PyFileSystem(FSSpecHandler(s3_client))
 
     # Load datasets with custom filesystem

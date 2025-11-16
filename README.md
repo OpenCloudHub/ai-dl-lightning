@@ -106,13 +106,13 @@ You're now ready to develop, train and serve models locally!
 **Basic training:**
 
 ```bash
-python src/train.py --lr 0.005
+python src/training/train.py --lr 0.005
 ```
 
 or use the Job API like we would do in practise too
 
 ```bash
-RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python src/train.py
+RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python src/training/train.py
 ```
 
 ### Model Serving
@@ -122,14 +122,14 @@ Ensure you have a trained model to load either from local folder or from mlflow 
 **Start the serving application:**
 
 ```bash
-serve run src.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
+serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
 ```
 
 or even better and more production ready, run:
 
 ```bash
-serve build src.serve:app_builder -o src/serve_config.yaml
-serve deploy src/serve_config.yaml
+serve build src.serving.serve:app_builder -o src/serving/serve_config.yaml
+serve deploy src/serving/serve_config.yaml
 ```
 
 Access Swagger docs at `http://localhost:8000/docs`

@@ -2,27 +2,33 @@ name: Submit Model Training
 on:
   workflow_dispatch:
     inputs:
+      dvc_data_version:
+        description: 'DVC Registry tag for data version (e.g "fashion-mnist-v0.2.0")'
+        required: true
+        type: string
+        default: 'fashion-mnist-v0.2.0'
       training_entrypoint:
         description: 'Training script entrypoint'
         required: false
         type: string
-        default: 'python src/train.py'
-      dvc_data_version:
-        description: 'DVC Registry tag for data version (e.g "fashion-mnist-v0.1.1")'
-        required: true
-        type: string
-        default: 'fashion-mnist-v0.1.1'
+        default: 'python src/training/train.py'
       training_args:
         description: 'Additional training arguments'
         required: false
         type: string
         default: ''
+      image_tag:
+        description: 'Docker image tag (latest, main-abc1234, etc.)'
+        required: false
+        type: string
+        default: 'latest
       compute_type:
         description: 'Compute configuration'
         required: true
         type: choice
         options:
           - 'cpu-small'
+          - 'cpu-small-distributed'
           - 'cpu-medium'
           - 'cpu-large'
           - 'gpu-small'
@@ -42,7 +48,7 @@ on:
         required: true
         type: string
         default: 'val_acc'
-      higher_is_better:
+      comparison_higher_is_better:
         description: "Higher metric value is better."
         type: boolean
         default: true
@@ -57,16 +63,19 @@ jobs:
     # Call shared workflow
     uses: opencloudhub/.github/.github/workflows/shared-argo-ml-workflow.yaml@main
     with:
-      repo_name: ${{ github.event.repository.name }}
       model_name: "fashion-mnist-classifier"
-      experiment_name: "fashion-mnist"
       dvc_data_version: ${{ inputs.dvc_data_version }}
+      experiment_name: "fashion-mnist"
+      training_entrypoint: ${{ inputs.training_entrypoint }}
+      training_args: ${{ inputs.training_args }}
+      image_tag: ${{ inputs.image_tag }}
       compute_type: ${{ inputs.compute_type }}
       approval_mode: ${{ inputs.approval_mode }}
       comparison_metric: ${{ inputs.comparison_metric }}
-      higher_is_better: ${{ inputs.higher_is_better}}
+      comparison_higher_is_better: ${{ inputs.higher_is_better}}
       comparison_threshold: ${{ inputs.comparison_threshold }}
-      training_image: "opencloudhuborg/fashion-mnist-classifier:latest"
-      training_entrypoint: ${{ inputs.training_entrypoint }}
-      training_args: ${{ inputs.training_args }}
+      
     secrets: inherit
+
+
+
