@@ -35,7 +35,6 @@ app = FastAPI(
 
 @serve.deployment(
     ray_actor_options={"num_cpus": 1},
-    autoscaling_config={"min_replicas": 1, "max_replicas": 3},
 )
 @serve.ingress(app)
 class FashionMNISTClassifier:
