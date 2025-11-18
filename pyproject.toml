@@ -5,18 +5,44 @@ description = "Example model training and serving with ray, mlflow, pytorch ligh
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "dvc[s3]>=3.64.0",
-    "fastapi>=0.116.1",
-    "lightning>=2.5.6",
+    # Shared dependencies (both training and serving)
     "mlflow>=3.2.0",
     "pydantic-settings>=2.12.0",
-    "ray[data,serve,train,tune]>=2.48.0",
+    "ray[default]>=2.48.0",
+    "lightning>=2.5.6",
+    "pydantic-settings>=2.12.0",
+]
+
+[project.optional-dependencies]
+# Training-specific dependencies
+training = [
+    "dvc[s3]>=3.64.0",
+    "ray[data,train,tune]>=2.48.0",
     "rich>=14.2.0",
     "torchmetrics>=1.8.2",
     "torchvision>=0.24.0",
 ]
+
+# Serving-specific dependencies
+serving = [
+    "fastapi>=0.116.1",
+    "ray[serve]>=2.48.0",
+]
+
 [dependency-groups]
+# Development dependencies (local-only, not published)
 dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.12.8",
 ]
+
+# Optional: Testing
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.uv]
+concurrent-builds = 4
+concurrent-downloads = 8
+concurrent-installs = 4

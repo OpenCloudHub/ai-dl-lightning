@@ -6,14 +6,24 @@ from typing import Annotated, List
 
 import numpy as np
 from pydantic import AfterValidator, BaseModel, Field
-from torchvision.datasets import FashionMNIST
 
 from src._utils.logging import get_logger
 from src.serving.config import SERVING_CONFIG
 
 logger = get_logger(__name__)
 
-FASHION_MNIST_CLASSES = FashionMNIST.classes
+FASHION_MNIST_CLASSES = [
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle boot",
+]
 
 
 def validate_images(

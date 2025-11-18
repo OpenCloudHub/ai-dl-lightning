@@ -17,8 +17,13 @@ on:
         required: false
         type: string
         default: ''
-      image_tag:
-        description: 'Docker image tag (latest, main-abc1234, etc.)'
+      training_image_tag:
+        description: 'Docker image tag used for training(latest, main-abc1234, etc.)'
+        required: false
+        type: string
+        default: 'latest'
+      serving_image_tag:
+        description: 'Docker image tag used for serving(latest, main-abc1234, etc.)'
         required: false
         type: string
         default: 'latest'
@@ -68,7 +73,8 @@ jobs:
       experiment_name: "fashion-mnist"
       training_entrypoint: ${{ inputs.training_entrypoint }}
       training_args: ${{ inputs.training_args }}
-      image_tag: ${{ inputs.image_tag }}
+      training_image_tag: ${{ inputs.training_image_tag }}
+      serving_image_tag: ${{ inputs.serving_image_tag }}
       compute_type: ${{ inputs.compute_type }}
       approval_mode: ${{ inputs.approval_mode }}
       comparison_metric: ${{ inputs.comparison_metric }}

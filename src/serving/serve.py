@@ -203,12 +203,11 @@ class FashionMNISTClassifier:
 
         # Return 503 if not healthy
         if self.status != APIStatus.HEALTHY:
+            detail = response.model_dump()
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=response.model_dump(),
+                detail=detail,
             )
-
-        return response
 
     @app.get(
         "/info",
