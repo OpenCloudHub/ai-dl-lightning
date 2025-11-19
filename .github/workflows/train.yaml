@@ -81,6 +81,3 @@ jobs:
       comparison_higher_is_better: ${{ inputs.comparison_higher_is_better}}
       comparison_threshold: ${{ inputs.comparison_threshold }}
     secrets: inherit
-
-
-

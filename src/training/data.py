@@ -8,7 +8,6 @@ import numpy as np
 import ray
 import s3fs
 from numpy import ndarray
-from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset
 
 from src._utils.logging import get_logger, log_section
@@ -125,12 +124,16 @@ def load_data(
     )
 
     # Wrap with PyArrow filesystem
-    # TODO: cant we do it directly with s3fs?
-    pa_fs = PyFileSystem(FSSpecHandler(s3_client))
+    # TODO: can't we do it directly with s3fs?
+    # pa_fs = PyFileSystem(FSSpecHandler(s3_client))
+
+    # # Load datasets with custom filesystem
+    # train_ds = ray.data.read_parquet(train_path, filesystem=pa_fs)
+    # val_ds = ray.data.read_parquet(val_path, filesystem=pa_fs)
 
     # Load datasets with custom filesystem
-    train_ds = ray.data.read_parquet(train_path, filesystem=pa_fs)
-    val_ds = ray.data.read_parquet(val_path, filesystem=pa_fs)
+    train_ds = ray.data.read_parquet(train_path, filesystem=s3_client)
+    val_ds = ray.data.read_parquet(val_path, filesystem=s3_client)
 
     if limit_train:
         train_ds = train_ds.limit(limit_train)

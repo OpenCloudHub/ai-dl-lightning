@@ -1,22 +1,21 @@
 [project]
 name = "ai-dl-lightning"
 version = "0.1.0"
-description = "Example model training and serving with ray, mlflow, pytorch lightning and fastapi"
+description = "Fashion MNIST classification with Ray, MLflow, PyTorch Lightning"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    # Shared dependencies (both training and serving)
+    # Minimal shared dependencies
     "mlflow>=3.2.0",
     "pydantic-settings>=2.12.0",
-    "ray[default]>=2.48.0",
-    "lightning>=2.5.6",
-    "pydantic-settings>=2.12.0",
+    "torch>=2.5.0",
 ]
 
 [project.optional-dependencies]
 # Training-specific dependencies
 training = [
     "dvc[s3]>=3.64.0",
+    "lightning>=2.5.6",
     "ray[data,train,tune]>=2.48.0",
     "rich>=14.2.0",
     "torchmetrics>=1.8.2",
@@ -27,6 +26,7 @@ training = [
 serving = [
     "fastapi>=0.116.1",
     "ray[serve]>=2.48.0",
+    "numpy>=1.24.0",
 ]
 
 [dependency-groups]
@@ -36,11 +36,6 @@ dev = [
     "ruff>=0.12.8",
 ]
 
-# Optional: Testing
-test = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-]
 
 [tool.uv]
 concurrent-builds = 4
