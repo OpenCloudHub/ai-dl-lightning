@@ -1,4 +1,4 @@
-name: Submit Model Training
+name: MLOPS Pipeline
 on:
   workflow_dispatch:
     inputs:
@@ -66,7 +66,7 @@ on:
 jobs:
   train:
     # Call shared workflow
-    uses: opencloudhub/.github/.github/workflows/shared-argo-ml-workflow.yaml@main
+    uses: opencloudhub/.github/.github/workflows/argo-mlops-pipeline.yaml@main
     with:
       model_name: "fashion-mnist-classifier"
       dvc_data_version: ${{ inputs.dvc_data_version }}
