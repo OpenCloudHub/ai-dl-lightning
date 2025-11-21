@@ -9,6 +9,7 @@ dependencies = [
     "mlflow>=3.2.0",
     "pydantic-settings>=2.12.0",
     "torch>=2.5.0",
+    "rich>=14.2.0",
 ]
 
 [project.optional-dependencies]
@@ -16,8 +17,7 @@ dependencies = [
 training = [
     "dvc[s3]>=3.64.0",
     "lightning>=2.5.6",
-    "ray[data,train,tune]>=2.48.0",
-    "rich>=14.2.0",
+    "ray[default,data,train,tune]>=2.48.0",
     "torchmetrics>=1.8.2",
     "torchvision>=0.24.0",
 ]

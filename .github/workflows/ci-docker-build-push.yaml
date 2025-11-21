@@ -7,6 +7,7 @@ on:
 jobs:
   # Detect what changed
   changes:
+    name: "🔎 Detect Changes"
     runs-on: ubuntu-latest
     outputs:
       training: ${{ steps.filter.outputs.training }}

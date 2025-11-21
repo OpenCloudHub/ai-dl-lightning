@@ -5,80 +5,90 @@ ARG RAY_VERSION=2.48.0
 ARG PYTHON_MAJOR=3
 ARG PYTHON_MINOR=12
 ARG DISTRO=bookworm
-# Compose tags
 ARG RAY_PY_TAG=py${PYTHON_MAJOR}${PYTHON_MINOR}
 ARG UV_PY_TAG=python${PYTHON_MAJOR}.${PYTHON_MINOR}-${DISTRO}
-#==============================================================================#
-# Stage: UV base with build tools
-FROM ghcr.io/astral-sh/uv:${UV_PY_TAG} AS uv_base
 
+#==============================================================================#
+# Stage: Base with UV (tooling layer)
+FROM ghcr.io/astral-sh/uv:${UV_PY_TAG} AS uv_base
 WORKDIR /workspace/project
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential git curl wget \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/workspace/project/.venv/bin:$PATH" \
-    PYTHONPATH="/workspace/project:/workspace/project/src"
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
-    curl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    PYTHONDONTWRITEBYTECODE=1
 
 #==============================================================================#
-# Stage: Development environment (all extras)
+# Stage: Development (for devcontainer)
 FROM uv_base AS dev
-
 COPY pyproject.toml uv.lock ./
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --all-extras --all-groups --no-install-project
-
+# Don't create venv - let devcontainer handle it at runtime
 ENV ENVIRONMENT=development
 
 #==============================================================================#
-# Stage: Training image
+# Stage: TRAINING (production training image)
 FROM rayproject/ray:${RAY_VERSION}-${RAY_PY_TAG} AS training
-
 WORKDIR /workspace/project
+
+# Switch to ray user for all operations
+USER ray
 
 # Copy UV binary
 COPY --from=uv_base /usr/local/bin/uv /usr/local/bin/uv
 
-COPY pyproject.toml uv.lock ./
+# Copy dependency files with proper ownership
+COPY --chown=ray:ray pyproject.toml uv.lock ./
 
-# Install base + training dependencies
-RUN --mount=type=cache,target=/root/.cache/uv \
+# Install dependencies with caching
+RUN --mount=type=cache,target=/home/ray/.cache/uv,uid=1000,gid=1000 \
     uv sync --extra training --no-dev --no-install-project
 
-COPY --chown=ray:users src/ /workspace/project/src/
+# Copy source code
+COPY --chown=ray:ray src/ ./src/
 
 ENV VIRTUAL_ENV="/workspace/project/.venv" \
     PATH="/workspace/project/.venv/bin:$PATH" \
-    PYTHONPATH="/workspace/project:/workspace/project/src" \
+    PYTHONPATH="/workspace/project" \
     ENVIRONMENT=training
 
 #==============================================================================#
-# Stage: Serving image (minimal)
-FROM rayproject/ray:${RAY_VERSION}-${RAY_PY_TAG} AS serving
-
+# Stage: SERVING (production serving image)
+FROM python:3.12-slim-bookworm AS serving
 WORKDIR /workspace/project
+
+# Install system dependencies including wget for health probes
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl wget \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user matching Ray conventions
+RUN groupadd -g 1000 ray && \
+    useradd -m -u 1000 -g 1000 -s /bin/bash ray && \
+    chown -R ray:ray /workspace/project
+
+# Switch to non-root user
+USER ray
 
 # Copy UV binary
 COPY --from=uv_base /usr/local/bin/uv /usr/local/bin/uv
 
-COPY pyproject.toml uv.lock ./
+# Copy dependency files with proper ownership
+COPY --chown=ray:ray pyproject.toml uv.lock ./
 
-# Install base + serving dependencies only
-RUN --mount=type=cache,target=/root/.cache/uv \
+# Install dependencies with caching
+RUN --mount=type=cache,target=/home/ray/.cache/uv,uid=1000,gid=1000 \
     uv sync --extra serving --no-dev --no-install-project
 
-COPY --chown=ray:users src/ /workspace/project/src/
+# Copy source code
+COPY --chown=ray:ray src/ ./src/
 
 ENV VIRTUAL_ENV="/workspace/project/.venv" \
     PATH="/workspace/project/.venv/bin:$PATH" \
-    PYTHONPATH="/workspace/project:/workspace/project/src" \
+    PYTHONPATH="/workspace/project" \
     ENVIRONMENT=production

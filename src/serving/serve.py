@@ -208,6 +208,7 @@ class FashionMNISTClassifier:
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=detail,
             )
+        return response
 
     @app.get(
         "/info",
