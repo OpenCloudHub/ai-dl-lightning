@@ -6,7 +6,7 @@ on:
         description: 'DVC Registry tag for data version (e.g "fashion-mnist-v0.2.0")'
         required: true
         type: string
-        default: 'fashion-mnist-v0.2.0'
+        default: 'fashion-mnist-v1.0.0'
       training_entrypoint:
         description: 'Training script entrypoint'
         required: false
