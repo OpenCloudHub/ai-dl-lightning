@@ -13,8 +13,10 @@ name = "ai-dl-lightning"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "dvc", extra = ["s3"] },
     { name = "mlflow" },
     { name = "pydantic-settings" },
+    { name = "rich" },
     { name = "torch" },
 ]
 
@@ -25,10 +27,8 @@ serving = [
     { name = "ray", extra = ["serve"] },
 ]
 training = [
-    { name = "dvc", extra = ["s3"] },
     { name = "lightning" },
-    { name = "ray", extra = ["data", "train", "tune"] },
-    { name = "rich" },
+    { name = "ray", extra = ["data", "default", "train", "tune"] },
     { name = "torchmetrics" },
     { name = "torchvision" },
 ]
@@ -41,15 +41,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dvc", extras = ["s3"], marker = "extra == 'training'", specifier = ">=3.64.0" },
+    { name = "dvc", extras = ["s3"], specifier = ">=3.64.0" },
     { name = "fastapi", marker = "extra == 'serving'", specifier = ">=0.116.1" },
     { name = "lightning", marker = "extra == 'training'", specifier = ">=2.5.6" },
     { name = "mlflow", specifier = ">=3.2.0" },
     { name = "numpy", marker = "extra == 'serving'", specifier = ">=1.24.0" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
-    { name = "ray", extras = ["data", "train", "tune"], marker = "extra == 'training'", specifier = ">=2.48.0" },
+    { name = "ray", extras = ["default", "data", "train", "tune"], marker = "extra == 'training'", specifier = ">=2.48.0" },
     { name = "ray", extras = ["serve"], marker = "extra == 'serving'", specifier = ">=2.48.0" },
-    { name = "rich", marker = "extra == 'training'", specifier = ">=14.2.0" },
+    { name = "rich", specifier = ">=14.2.0" },
     { name = "torch", specifier = ">=2.5.0" },
     { name = "torchmetrics", marker = "extra == 'training'", specifier = ">=1.8.2" },
     { name = "torchvision", marker = "extra == 'training'", specifier = ">=0.24.0" },
@@ -2875,6 +2875,22 @@ data = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
+]
+default = [
+    { name = "aiohttp" },
+    { name = "aiohttp-cors" },
+    { name = "colorful" },
+    { name = "grpcio" },
+    { name = "opencensus" },
+    { name = "opentelemetry-exporter-prometheus" },
+    { name = "opentelemetry-proto" },
+    { name = "opentelemetry-sdk" },
+    { name = "prometheus-client" },
+    { name = "py-spy" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "smart-open" },
+    { name = "virtualenv" },
 ]
 serve = [
     { name = "aiohttp" },
