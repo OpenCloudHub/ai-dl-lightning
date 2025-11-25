@@ -154,15 +154,15 @@ ______________________________________________________________________
 
 ```
 ai-ml-lightning/
-├── src/
-│   ├── training/                       # Training and optimization scripts
-│   │   ├── train.py
-│   │   └── evaluate.py
-│   ├── serving/                        # Model serving (Ray Serve/FastAPI)
-│   │   └── serve.py
-│   └── _utils/                         # Shared utilities
-│       ├── logging_config.py
-│       └── mlflow_tags.py              # Set up mandatory MLflow tags needed for production workflow
+├── src
+│   ├── _utils.py
+│   ├── data.py
+│   ├── model.py
+│   ├── serve_config.py
+│   ├── serve.py
+│   ├── train.py
+│   ├── tune.py
+│   └── serve.py
 ├── tests/                              # Unit tests
 ├── .devcontainer/                      # VS Code DevContainer config
 ├── .github/workflows/                  # CI/CD workflows
