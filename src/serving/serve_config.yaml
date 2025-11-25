@@ -19,7 +19,7 @@ applications:
   deployments:
   - name: FashionMNISTClassifier
     user_config:
-      model_uri: models:/ci.fashion-mnist-classifier/15
+      model_uri: models:/ci.fashion-mnist-classifier/1
     autoscaling_config:
       min_replicas: 1
       initial_replicas: null
