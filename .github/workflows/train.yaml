@@ -1,12 +1,13 @@
 name: MLOPS Pipeline
+
 on:
   workflow_dispatch:
     inputs:
       dvc_data_version:
-        description: 'DVC Registry tag for data version (e.g "fashion-mnist-v0.2.0")'
-        required: true
+        description: 'Data version (latest or specific like v1.0.0)'
+        required: false
         type: string
-        default: 'fashion-mnist-v1.0.0'
+        default: 'latest'
       training_entrypoint:
         description: 'Training script entrypoint'
         required: false
@@ -18,12 +19,12 @@ on:
         type: string
         default: ''
       training_image_tag:
-        description: 'Docker image tag used for training(latest, main-abc1234, etc.)'
+        description: 'Training image tag (latest or specific like abc1234)'
         required: false
         type: string
         default: 'latest'
       serving_image_tag:
-        description: 'Docker image tag used for serving(latest, main-abc1234, etc.)'
+        description: 'Serving image tag (latest or specific like abc1234)'
         required: false
         type: string
         default: 'latest'
@@ -65,10 +66,10 @@ on:
 
 jobs:
   train:
-    # Call shared workflow
-    uses: opencloudhub/.github/.github/workflows/argo-mlops-pipeline.yaml@main
+    uses: OpenCloudHub/.github/.github/workflows/shared-mlops-pipeline.yaml@main
     with:
       model_name: "fashion-mnist-classifier"
+      dvc_dataset: "fashion-mnist"
       dvc_data_version: ${{ inputs.dvc_data_version }}
       experiment_name: "fashion-mnist"
       training_entrypoint: ${{ inputs.training_entrypoint }}
@@ -78,6 +79,6 @@ jobs:
       compute_type: ${{ inputs.compute_type }}
       approval_mode: ${{ inputs.approval_mode }}
       comparison_metric: ${{ inputs.comparison_metric }}
-      comparison_higher_is_better: ${{ inputs.comparison_higher_is_better}}
+      comparison_higher_is_better: ${{ inputs.comparison_higher_is_better }}
       comparison_threshold: ${{ inputs.comparison_threshold }}
     secrets: inherit
