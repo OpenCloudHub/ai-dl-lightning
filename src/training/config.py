@@ -10,7 +10,8 @@ class TrainingConfig(BaseSettings):
     mlflow_registered_model_name: str = "dev.fashion-mnist-classifier"
 
     # Ray options
-    ray_storage_path: str = "/tmp/ray_results"
+    ray_storage_endpoint: str = "http://minio.minio-tenant.svc.cluster.local:80"
+    ray_storage_path: str = "ray-results"
     ray_num_workers: int = 1
 
     # DVC repository URL

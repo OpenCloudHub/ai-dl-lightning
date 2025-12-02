@@ -1,9 +1,11 @@
 import argparse
+import os
 from datetime import datetime
 from pathlib import Path
 
 import lightning.pytorch as pl
 import mlflow
+import pyarrow
 import ray
 import torch
 import urllib3
@@ -220,6 +222,12 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         )
         train_loop_config["run_name"] = run_name
 
+        storage_filesystem = pyarrow.fs.S3FileSystem(
+            endpoint_override=TRAINING_CONFIG.ray_storage_endpoint,
+            access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+            secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
+
         trainer = TorchTrainer(
             train_loop_per_worker=train_fn_per_worker,
             train_loop_config=train_loop_config,
@@ -237,6 +245,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
                     checkpoint_score_order="max",
                 ),
                 failure_config=FailureConfig(max_failures=3),
+                storage_filesystem=storage_filesystem,
                 storage_path=TRAINING_CONFIG.ray_storage_path,
             ),
             datasets={"train": train_ds, "val": val_ds},
@@ -263,7 +272,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
             logger.info(f"Logging model to MLflow run: [cyan]{mlflow_run_id}[/cyan]")
             mlflow.pytorch.log_model(
                 pytorch_model=model,
-                artifact_path="model",
+                name="model",
                 registered_model_name=TRAINING_CONFIG.mlflow_registered_model_name,
                 input_example=sample_input,
                 code_paths=[
