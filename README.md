@@ -94,7 +94,7 @@ ______________________________________________________________________
 1. **Start local Ray cluster**
 
    ```bash
-      ray start --head
+      ray start --head --num-cpus 8
    ```
 
    Access dashboard at `http://127.0.0.1:8265`
@@ -122,7 +122,7 @@ Ensure you have a trained model to load either from local folder or from mlflow 
 **Start the serving application:**
 
 ```bash
-serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
+serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/8" --reload
 ```
 
 or even better and more production ready, run:

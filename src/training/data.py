@@ -123,14 +123,6 @@ def load_data(
         },
     )
 
-    # Wrap with PyArrow filesystem
-    # TODO: can't we do it directly with s3fs?
-    # pa_fs = PyFileSystem(FSSpecHandler(s3_client))
-
-    # # Load datasets with custom filesystem
-    # train_ds = ray.data.read_parquet(train_path, filesystem=pa_fs)
-    # val_ds = ray.data.read_parquet(val_path, filesystem=pa_fs)
-
     # Load datasets with custom filesystem
     train_ds = ray.data.read_parquet(train_path, filesystem=s3_client)
     val_ds = ray.data.read_parquet(val_path, filesystem=s3_client)

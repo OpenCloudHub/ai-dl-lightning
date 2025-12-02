@@ -1,10 +1,12 @@
 import argparse
+from datetime import datetime
 from pathlib import Path
 
 import lightning.pytorch as pl
 import mlflow
 import ray
 import torch
+import urllib3
 from pydantic_settings import BaseSettings
 from ray.train import (
     CheckpointConfig,
@@ -27,6 +29,8 @@ from src._utils.logging import get_logger, log_section
 from src.training.config import TRAINING_CONFIG
 from src.training.data import load_data
 from src.training.model import SimpleImageClassifier
+
+urllib3.disable_warnings()
 
 logger = get_logger(__name__)
 
@@ -62,7 +66,14 @@ WORKFLOW_TAGS = WorkflowTags()
 # ============================================== #
 def train_fn_per_worker(train_loop_cnfg: dict):
     """Training code that runs on each worker."""
+    # Disable SSL warnings in worker processes
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     worker_logger = get_logger(__name__)
+
+    worker_logger.info(
+        f"🎯 Worker {get_context().get_world_rank()} of {get_context().get_world_size()} started"
+    )
 
     # Load data shard on each worker
     train_ds_shard = get_dataset_shard("train")
@@ -141,8 +152,8 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
     data_version = train_driver_cnfg.get("data_version")
     train_ds, val_ds, data_metrics = load_data(
         version=data_version,
-        limit_train=100,
-        limit_val=50,  # TODO: dont hardcode in final version
+        limit_train=1000,
+        limit_val=200,  # TODO: increase or remove
     )
     # Grab a sample BEFORE training (while dataset is fresh)
     sample_batch = val_ds.take_batch(batch_size=1)
@@ -198,15 +209,24 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
             f"Max epochs: [yellow]{train_loop_config.get('max_epochs')}[/yellow]"
         )
 
+        use_gpu = torch.cuda.is_available() and torch.cuda.device_count() >= num_workers
+        device_tag = "gpu" if use_gpu else "cpu"
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        # Use provided run_name or generate one
+        run_name = (
+            train_loop_config.get("run_name")
+            or f"{TRAINING_CONFIG.mlflow_experiment_name}-w{num_workers}-{device_tag}-{timestamp}"
+        )
+        train_loop_config["run_name"] = run_name
+
         trainer = TorchTrainer(
             train_loop_per_worker=train_fn_per_worker,
             train_loop_config=train_loop_config,
             scaling_config=ScalingConfig(
                 num_workers=num_workers,
-                use_gpu=torch.cuda.is_available()
-                and torch.cuda.device_count() >= num_workers,
+                use_gpu=use_gpu,
             ),
-            # TODO: set shared temp path for distributed training
             run_config=RunConfig(
                 name=train_driver_cnfg.get("train_loop_config").get(
                     "run_name", "torch_train_run"

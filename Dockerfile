@@ -33,7 +33,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 #==============================================================================#
 # Stage: Development (for devcontainer)
 FROM uv_base AS dev
-ENV ENVIRONMENT=development
+
+# ✅ Install all dependancies for development
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --all-extras --all-groups --no-install-project
+
+ENV VIRTUAL_ENV="/workspace/project/.venv" \
+    PATH="/workspace/project/.venv/bin:$PATH" \
+    PYTHONPATH="/workspace/project" \
+    ENVIRONMENT=development
 
 #==============================================================================#
 # Stage: TRAINING (production training image)

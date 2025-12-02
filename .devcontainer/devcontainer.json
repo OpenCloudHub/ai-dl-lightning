@@ -12,8 +12,6 @@
 		"source=${localEnv:HOME}/Development/projects/opencloudhub/dev/shared-data/,target=/workspace/shared-data,type=bind"
 	],
 	"runArgs": [
-		"--env-file",
-		"./.env",
 		"--network",
 		"host",
 		"--gpus",
