@@ -297,12 +297,14 @@ def main():
     parser.add_argument("--num-workers", type=int, default=1)
     args = parser.parse_args()
 
+    num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers
+
     log_section("Training Configuration", "⚙️")
     logger.info(f"Run name: {args.run_name or 'auto-generated'}")
     logger.info(f"Batch size: {args.batch_size}")
     logger.info(f"Learning rate: {args.lr}")
     logger.info(f"Max epochs: {args.max_epochs}")
-    logger.info(f"Num workers: {args.num_workers}")
+    logger.info(f"Num workers: {num_workers}")
 
     log_section("CI/CD Data Contract from ENV", "📋")
     logger.info(f"Argo Workflow UID: {WORKFLOW_TAGS.argo_workflow_uid}")
@@ -312,7 +314,7 @@ def main():
     # Build training driver configuration
     train_driver_cnfg = {
         "data_version": WORKFLOW_TAGS.dvc_data_version,
-        "num_workers": args.num_workers,
+        "num_workers": num_workers,
         "train_loop_config": {
             "batch_size": args.batch_size,
             "lr": args.lr,

@@ -9,8 +9,9 @@ class TrainingConfig(BaseSettings):
     mlflow_experiment_name: str = "fashion-mnist"
     mlflow_registered_model_name: str = "dev.fashion-mnist-classifier"
 
-    # Storage paths
+    # Ray options
     ray_storage_path: str = "/tmp/ray_results"
+    ray_num_workers: int = 1
 
     # DVC repository URL
     dvc_repo: str = "https://github.com/OpenCloudHub/data-registry"
