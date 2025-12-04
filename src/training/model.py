@@ -1,4 +1,34 @@
-# src/model.py
+# ==============================================================================
+# Fashion MNIST Model Definition
+# ==============================================================================
+#
+# PyTorch Lightning module for Fashion MNIST classification.
+#
+# Model Architecture:
+#   - Base: ResNet18 (pretrained weights NOT used - trained from scratch)
+#   - Modified: First conv layer adapted for grayscale (1 channel instead of 3)
+#   - Output: 10 classes (Fashion MNIST categories)
+#
+# Training Features:
+#   - AdamW optimizer with weight decay
+#   - Cross-entropy loss
+#   - Comprehensive metrics: Accuracy, Precision, Recall, F1 (multiclass)
+#
+# Fashion MNIST Classes:
+#   0: T-shirt/top, 1: Trouser, 2: Pullover, 3: Dress, 4: Coat,
+#   5: Sandal, 6: Shirt, 7: Sneaker, 8: Bag, 9: Ankle boot
+#
+# Usage:
+#   model = SimpleImageClassifier(num_classes=10, lr=1e-3)
+#   trainer = pl.Trainer(max_epochs=10)
+#   trainer.fit(model, train_dataloader, val_dataloader)
+#
+# Note:
+#   This model expects input batches as dicts: {'image': tensor, 'label': tensor}
+#   Designed for use with Ray Data iterators (not standard PyTorch DataLoaders)
+#
+# ==============================================================================
+
 from typing import Dict, Tuple
 
 import lightning.pytorch as pl

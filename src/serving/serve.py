@@ -1,3 +1,48 @@
+# ==============================================================================
+# Fashion MNIST Serving Application
+# ==============================================================================
+#
+# Production model serving using Ray Serve with FastAPI integration.
+#
+# Features:
+#   - Load models from MLflow Model Registry
+#   - Automatic normalization using DVC metadata from training
+#   - Zero-downtime model updates via reconfigure()
+#   - Health checks and comprehensive API documentation
+#   - Autoscaling with configurable replicas
+#
+# Endpoints:
+#   GET  /         - Root info and status
+#   GET  /health   - Health check (returns 503 if not ready)
+#   GET  /info     - Detailed model information and normalization params
+#   POST /predict  - Batch prediction endpoint
+#
+# Model Loading Flow:
+#   1. Load model from MLflow registry (e.g., 'models:/ci.fashion-mnist-classifier/1')
+#   2. Extract 'dvc_data_version' tag from training run
+#   3. Fetch normalization params (mean, std) from DVC metadata
+#   4. Apply same normalization as training for consistency
+#
+# Usage:
+#   # Development with hot reload
+#   serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
+#
+#   # Production deployment
+#   serve build src.serving.serve:app_builder -o serve_config.yaml
+#   serve deploy serve_config.yaml
+#
+# Hot Model Update (without restart):
+#   import ray
+#   from ray import serve
+#   serve.run(FashionMNISTClassifier.bind(), user_config={"model_uri": "new_uri"})
+#
+# See Also:
+#   - src/serving/schemas.py: Request/response Pydantic models
+#   - src/training/data.py: normalize_images() shared function
+#   - src/serving/serve_config.yaml: Deployment configuration
+#
+# ==============================================================================
+
 """Fashion MNIST serving application using Ray Serve + MLflow."""
 
 from datetime import datetime, timezone

@@ -1,3 +1,40 @@
+# ==============================================================================
+# Fashion MNIST Training Script
+# ==============================================================================
+#
+# Distributed training pipeline using Ray Train with PyTorch Lightning.
+#
+# This script orchestrates the full training workflow:
+#   1. Load versioned data from DVC (with normalization metadata)
+#   2. Configure distributed training with Ray TorchTrainer (DDP)
+#   3. Log experiments, metrics, and artifacts to MLflow
+#   4. Register trained models to MLflow Model Registry
+#
+# Architecture:
+#   - Driver Process: Runs on head node, manages MLflow run and orchestration
+#   - Worker Processes: Run on Ray workers, execute PyTorch Lightning training
+#   - Data is sharded across workers using Ray Data
+#
+# CI/CD Integration:
+#   Required environment variables for production (set by Argo Workflows):
+#   - ARGO_WORKFLOW_UID: Workflow identifier for traceability
+#   - DOCKER_IMAGE_TAG: Image tag for reproducibility
+#   - DVC_DATA_VERSION: Data version tag (e.g., 'fashion-mnist-v1.0.0')
+#
+# Usage:
+#   # Local development
+#   python src/training/train.py --lr 0.001 --max-epochs 5
+#
+#   # Production like (via Ray Job API)
+#   ray job submit --working-dir . -- python src/training/train.py
+#
+# See Also:
+#   - src/training/model.py: PyTorch Lightning model definition
+#   - src/training/data.py: DVC data loading utilities
+#   - src/training/config.py: Configuration settings
+#
+# ==============================================================================
+
 import argparse
 import os
 from datetime import datetime
@@ -303,7 +340,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--max-epochs", type=int, default=2)
-    parser.add_argument("--num-workers", type=int, default=1)
+    parser.add_argument("--num-workers", type=int)
     args = parser.parse_args()
 
     num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers

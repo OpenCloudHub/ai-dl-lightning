@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Stage: Development (for devcontainer)
 FROM uv_base AS dev
 
-# ✅ Install all dependancies for development
+# ✅ Install all dependencies for development
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --all-extras --all-groups --no-install-project
 

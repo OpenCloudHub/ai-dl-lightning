@@ -1,3 +1,31 @@
+# ==============================================================================
+# Serving API Schemas
+# ==============================================================================
+#
+# Pydantic models for Fashion MNIST API request/response validation.
+#
+# Schema Overview:
+#   - PredictionRequest: Input validation for batch image predictions
+#   - PredictionResponse: Structured output with predictions and metadata
+#   - ModelInfo: Model metadata including normalization parameters
+#   - HealthResponse: Health check status information
+#
+# Input Formats Supported:
+#   - Flattened: (batch_size, 784) - 28x28 images flattened to 784 integers
+#   - 2D: (batch_size, 28, 28) - 28x28 grayscale images
+#   - Pixel values: 0-255 (uint8)
+#
+# Fashion MNIST Classes (0-9):
+#   T-shirt/top, Trouser, Pullover, Dress, Coat,
+#   Sandal, Shirt, Sneaker, Bag, Ankle boot
+#
+# Validation:
+#   - Batch size limited to REQUEST_MAX_LENGTH (default: 1000)
+#   - Pixel values validated to be in [0, 255] range
+#   - Shape validation for both flattened and 2D formats
+#
+# ==============================================================================
+
 """Schema definitions for the Fashion MNIST serving module."""
 
 from datetime import datetime

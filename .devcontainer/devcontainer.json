@@ -11,12 +11,7 @@
 	"mounts": [
 		"source=${localEnv:HOME}/Development/projects/opencloudhub/dev/shared-data/,target=/workspace/shared-data,type=bind"
 	],
-	"runArgs": [
-		"--network",
-		"host",
-		"--gpus",
-		"all"
-	], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
+	"runArgs": ["--network", "host", "--gpus", "all"], // Use the host's network stack to allow access to services running on the host and enable GPU access, might need to remove in case of no GPU
 	"postCreateCommand": "pre-commit run --all", // Install and run pre-commit hooks after creating the container
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
@@ -66,9 +61,7 @@
 				"python.terminal.activateEnvInCurrentTerminal": true,
 				"python.terminal.activateEnvironment": true,
 				"pythonTestExplorer.testFramework": "pytest",
-				"python.analysis.extraPaths": [
-					"${workspaceFolder}"
-				],
+				"python.analysis.extraPaths": ["${workspaceFolder}"],
 				"ruff.enable": true,
 				"ruff.lint.enable": true,
 				// Intent rainbow

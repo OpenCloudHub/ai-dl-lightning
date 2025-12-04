@@ -1,4 +1,42 @@
-# src/data.py
+# ==============================================================================
+# DVC Data Loading Module
+# ==============================================================================
+#
+# Loads versioned Fashion MNIST data from DVC remote storage (S3/MinIO).
+#
+# Key Features:
+#   - Fetches data from external DVC repository (data-registry)
+#   - Retrieves normalization parameters (mean, std) from DVC metadata
+#   - Returns Ray Datasets for distributed training with sharding
+#
+# Data Flow:
+#   1. Resolve DVC paths to S3 URLs using dvc.api
+#   2. Load Parquet files via Ray Data with s3fs filesystem
+#   3. Apply normalization using training set statistics
+#   4. Return shardable Ray Datasets for distributed training
+#
+# Normalization:
+#   - Statistics (mean, std) are stored in DVC metadata.json
+#   - Same parameters are used in serving for consistency
+#   - normalize_images() function is shared between training and serving
+#
+# Usage:
+#   train_ds, val_ds, metadata = load_data(
+#       version="fashion-mnist-v1.0.0",
+#       limit_train=1000,  # Optional: limit for quick testing
+#   )
+#
+# Environment Variables:
+#   - AWS_ACCESS_KEY_ID: S3/MinIO access key
+#   - AWS_SECRET_ACCESS_KEY: S3/MinIO secret key
+#   - AWS_ENDPOINT_URL: S3/MinIO endpoint URL
+#
+# See Also:
+#   - https://github.com/OpenCloudHub/data-registry (DVC repo)
+#   - src/serving/serve.py (uses get_normalization_params)
+#
+# ==============================================================================
+
 import json
 import os
 from typing import Optional, Tuple

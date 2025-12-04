@@ -1,4 +1,28 @@
 #!/usr/bin/env python3
+# ==============================================================================
+# Fashion MNIST API Integration Tests
+# ==============================================================================
+#
+# Test suite for the Fashion MNIST serving API.
+#
+# Test Categories:
+#   - Health checks: Root and /health endpoint validation
+#   - Predictions: Single and batch image predictions
+#   - Error handling: Invalid input validation
+#   - Batch sizes: Various batch size testing
+#
+# Prerequisites:
+#   - Ray Serve running: serve run src.serving.serve:app_builder model_uri="..."
+#   - Model loaded and healthy
+#
+# Usage:
+#   python tests/test_mnist_classifier.py
+#
+# Note:
+#   This script downloads Fashion MNIST test set to ./data if not present.
+#   Uses real images from the dataset for realistic testing.
+#
+# ==============================================================================
 """Test script for Fashion MNIST Classifier Ray Serve deployment"""
 
 import numpy as np

@@ -1,3 +1,36 @@
+# ==============================================================================
+# Logging Configuration
+# ==============================================================================
+#
+# Rich-based logging utilities for pretty console output.
+#
+# Features:
+#   - Colorful console output with Rich formatting
+#   - Custom SUCCESS log level (between INFO and WARNING)
+#   - Section headers with rule formatting
+#   - Compatible with Ray distributed logging
+#
+# Usage:
+#   from src._utils.logging import get_logger, log_section
+#
+#   logger = get_logger(__name__)
+#   logger.info("Starting process...")
+#   logger.success("✨ Process completed!")
+#
+#   log_section("New Section", "🚀")
+#
+# Rich Markup:
+#   Logger supports Rich markup in messages:
+#   logger.info("Model: [bold cyan]ResNet18[/bold cyan]")
+#   logger.info("Accuracy: [yellow]95.2%[/yellow]")
+#
+# Ray Compatibility:
+#   - Loggers are configured per-process (driver and workers)
+#   - No duplicate handlers added on repeated get_logger() calls
+#   - Console output works in both local and distributed contexts
+#
+# ==============================================================================
+
 import logging
 import sys
 

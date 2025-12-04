@@ -1,3 +1,27 @@
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+#
+# Centralized configuration for the training pipeline using pydantic-settings.
+#
+# All settings can be overridden via environment variables (uppercase with
+# underscores, e.g., MLFLOW_TRACKING_URI, RAY_NUM_WORKERS).
+#
+# Configuration Categories:
+#   - MLflow: Tracking URI, experiment name, model registry name
+#   - Ray: Storage endpoint, checkpoint path, worker count
+#   - DVC: Repository URL, data paths for train/val/metadata
+#
+# Environment Files:
+#   - .env.docker: Local Docker Compose development
+#   - .env.minikube: Minikube/Kubernetes development
+#
+# Usage:
+#   from src.training.config import TRAINING_CONFIG
+#   print(TRAINING_CONFIG.mlflow_experiment_name)
+#
+# ==============================================================================
+
 from pydantic_settings import BaseSettings
 
 

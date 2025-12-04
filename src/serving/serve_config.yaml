@@ -1,3 +1,19 @@
+# ==============================================================================
+# Ray Serve Deployment Configuration
+# ==============================================================================
+#
+# Production configuration for Fashion MNIST serving deployment.
+#
+# Usage:
+#   serve build src.serving.serve:app_builder -o src/serving/serve_config.yaml
+#   serve deploy src/serving/serve_config.yaml
+#
+# Model Update (zero-downtime):
+#   Update user_config.model_uri and re-deploy, or use:
+#   serve run ... --user-config='{"model_uri": "new_uri"}'
+#
+# ==============================================================================
+
 proxy_location: EveryNode
 http_options:
   host: 0.0.0.0
@@ -14,7 +30,7 @@ logging_config:
 applications:
 - name: FashionMNISTClassifier
   route_prefix: /
-  import_path: src.serve:app
+  import_path: src.serving.serve:app_builder
   runtime_env: {}
   deployments:
   - name: FashionMNISTClassifier
