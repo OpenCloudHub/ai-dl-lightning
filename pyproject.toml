@@ -21,15 +21,13 @@ dependencies = [
 [project.optional-dependencies]
 # Training-specific dependencies
 training = [
-    "ray[default,data,train,tune]>=2.48.0",
-    # torchvision, numpy, torchmetrics moved to base
+    "ray[default,data,train,tune]>=2.51.0",
 ]
 
 # Serving-specific dependencies
 serving = [
     "fastapi>=0.116.1",
-    "ray[serve,data]>=2.48.0",
-    # numpy moved to base
+    "ray[serve,data]>=2.51.0",
 ]
 
 [dependency-groups]
