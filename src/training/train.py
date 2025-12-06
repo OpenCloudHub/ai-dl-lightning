@@ -46,7 +46,6 @@ import pyarrow
 import ray
 import torch
 import urllib3
-from pydantic_settings import BaseSettings
 from ray.train import (
     CheckpointConfig,
     FailureConfig,
@@ -65,39 +64,13 @@ from ray.train.lightning import (
 from ray.train.torch import TorchTrainer
 
 from src._utils.logging import get_logger, log_section
-from src.training.config import TRAINING_CONFIG
+from src.training.config import TRAINING_CONFIG, WORKFLOW_TAGS
 from src.training.data import load_data
 from src.training.model import SimpleImageClassifier
 
 urllib3.disable_warnings()
 
 logger = get_logger(__name__)
-
-
-# ============================================== #
-# 🔹 SECTION: Data Contract
-# ============================================== #
-class WorkflowTags(BaseSettings):
-    """⚠️ Data Contract for CI/CD Workflows:
-    ============================================================
-    When running in Argo Workflows, the following environment variables MUST be set
-    and will take precedence over CLI arguments:
-
-    - ARGO_WORKFLOW_UID: Unique identifier for the Argo workflow run
-    - DOCKER_IMAGE_TAG: Docker image tag used for training (for reproducibility)
-    - DVC_DATA_VERSION: Data version from DVC (takes precedence over --data-version arg)
-
-    For local development, set these to "DEV" in your .env file.
-    """
-
-    # CI/CD Data Contract - Required fields set by Argo Workflows
-    # These values are used for MLflow tagging and reproducibility
-    argo_workflow_uid: str  # Must be set (use "DEV" for local development)
-    docker_image_tag: str  # Must be set (use "DEV" for local development)
-    dvc_data_version: str  # Takes precedence over --data-version CLI arg
-
-
-WORKFLOW_TAGS = WorkflowTags()
 
 
 # ============================================== #
@@ -145,7 +118,7 @@ def train_fn_per_worker(train_loop_cnfg: dict):
             run_id=train_loop_cnfg.get("mlflow_run_id"),
         )
         worker_logger.info(
-            f"Connected to MLflow run: [cyan]{train_loop_cnfg.get('mlflow_run_id')}[/cyan]"
+            f"Connected to MLflow run: {train_loop_cnfg.get('mlflow_run_id')}"
         )
 
     # Configure and fit distributed data parallel training lightning trainer
@@ -164,9 +137,7 @@ def train_fn_per_worker(train_loop_cnfg: dict):
     # See if we have a checkpoint to resume from
     checkpoint = get_checkpoint()
     if checkpoint:
-        worker_logger.info(
-            f"📂 Resuming from checkpoint: [yellow]{checkpoint}[/yellow]"
-        )
+        worker_logger.info(f"📂 Resuming from checkpoint: {checkpoint}")
         with checkpoint.as_directory() as ckpt_dir:
             ckpt_path = Path(ckpt_dir) / RayTrainReportCallback.CHECKPOINT_NAME
             trainer.fit(
@@ -197,12 +168,12 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
     # Grab a sample BEFORE training (while dataset is fresh)
     sample_batch = val_ds.take_batch(batch_size=1)
     sample_input = sample_batch["image"]  # Shape: (1, 1, 28, 28) numpy array
-    logger.info(f"Input example shape: [yellow]{sample_input.shape}[/yellow]")
+    logger.info(f"Input example shape: {sample_input.shape}")
 
     ## Start MLflow run in the driver
     log_section("MLflow Configuration", "📊")
     mlflow.set_experiment(TRAINING_CONFIG.mlflow_experiment_name)
-    logger.info(f"Experiment: [cyan]{TRAINING_CONFIG.mlflow_experiment_name}[/cyan]")
+    logger.info(f"Experiment: {TRAINING_CONFIG.mlflow_experiment_name}")
 
     # ⚠️ IMPORTANT: Tag training rune with workflow tags
     workflow_tags = {
@@ -216,7 +187,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         tags=workflow_tags,
     ) as active_run:
         mlflow_run_id = active_run.info.run_id
-        logger.success(f"✨ Started MLflow run: [bold cyan]{mlflow_run_id}[/bold cyan]")
+        logger.success(f"✨ Started MLflow run: {mlflow_run_id}")
 
         # Log DVC metadata as parameters for traceability
         mlflow.log_params(
@@ -230,7 +201,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         )
         # Log data metrics from DVC as a JSON artifact
         mlflow.log_dict(data_metrics, "dvc_data_metrics.json")
-        logger.info(f"Logged DVC metadata for version [bold]{data_version}[/bold]")
+        logger.info(f"Logged DVC metadata for version {data_version}")
 
         # Pass run_id to workers
         train_loop_config = train_driver_cnfg.get("train_loop_config", {})
@@ -239,14 +210,10 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         # Configure and fit Ray TorchTrainer
         log_section("Ray TorchTrainer Configuration", "⚙️")
         num_workers = train_driver_cnfg.get("num_workers")
-        logger.info(f"Number of workers: [yellow]{num_workers}[/yellow]")
-        logger.info(
-            f"Batch size: [yellow]{train_loop_config.get('batch_size')}[/yellow]"
-        )
-        logger.info(f"Learning rate: [yellow]{train_loop_config.get('lr')}[/yellow]")
-        logger.info(
-            f"Max epochs: [yellow]{train_loop_config.get('max_epochs')}[/yellow]"
-        )
+        logger.info(f"Number of workers: {num_workers}")
+        logger.info(f"Batch size: {train_loop_config.get('batch_size')}")
+        logger.info(f"Learning rate: {train_loop_config.get('lr')}")
+        logger.info(f"Max epochs: {train_loop_config.get('max_epochs')}")
 
         use_gpu = torch.cuda.is_available() and torch.cuda.device_count() >= num_workers
         device_tag = "gpu" if use_gpu else "cpu"
@@ -261,6 +228,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
 
         storage_filesystem = pyarrow.fs.S3FileSystem(
             endpoint_override=TRAINING_CONFIG.ray_storage_endpoint,
+            scheme=TRAINING_CONFIG.ray_storage_scheme,
             access_key=os.getenv("AWS_ACCESS_KEY_ID"),
             secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         )
@@ -295,9 +263,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         # Log model to MLflow from best checkpoint
         if result.checkpoint:
             log_section("Model Registration", "💾")
-            logger.info(
-                f"Loading best checkpoint from: [cyan]{result.checkpoint}[/cyan]"
-            )
+            logger.info(f"Loading best checkpoint from: {result.checkpoint}")
 
             with result.checkpoint.as_directory() as checkpoint_dir:
                 ckpt_path = (
@@ -306,7 +272,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
                 model = SimpleImageClassifier.load_from_checkpoint(ckpt_path)
 
             model = model.cpu().eval()
-            logger.info(f"Logging model to MLflow run: [cyan]{mlflow_run_id}[/cyan]")
+            logger.info(f"Logging model to MLflow run: {mlflow_run_id}")
             mlflow.pytorch.log_model(
                 pytorch_model=model,
                 name="model",
@@ -317,7 +283,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
                 ],  # Include model definition for unpickeling later
             )
             logger.success(
-                f"✨ Model registered as [bold]{TRAINING_CONFIG.mlflow_registered_model_name}[/bold]"
+                f"✨ Model registered as {TRAINING_CONFIG.mlflow_registered_model_name}"
             )
         else:
             logger.warning("⚠️ No checkpoint available, model not logged")
@@ -378,7 +344,7 @@ def main():
         logger.error(f"❌ Training failed with error: {result.error}")
     else:
         logger.success("✅ No errors during training")
-        logger.info(f"Best checkpoint: [cyan]{result.checkpoint}[/cyan]")
+        logger.info(f"Best checkpoint: {result.checkpoint}")
         logger.info(f"Metrics: {result.metrics}")
 
 

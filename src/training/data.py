@@ -119,7 +119,7 @@ def load_data(
         f"Loading data version '{version}' from DVC repo '{TRAINING_CONFIG.dvc_repo}'"
     )
     log_section(f"Loading Data Version {version}", "📦")
-    logger.info(f"DVC repo: [cyan]{TRAINING_CONFIG.dvc_repo}[/cyan]")
+    logger.info(f"DVC repo: {TRAINING_CONFIG.dvc_repo}")
 
     # Get URLs from DVC
     train_path = dvc.api.get_url(
@@ -138,17 +138,13 @@ def load_data(
     )
     metadata = json.loads(metadata_content)
 
-    logger.info(
-        f"Loaded dataset: [bold]{metadata['dataset']['name']}[/bold] [green]({version})[/green]"
-    )
+    logger.info(f"Loaded dataset: {metadata['dataset']['name']} ({version})")
 
     # Extract normalization statistics from metadata
     mean = metadata["metrics"]["train"]["pixel_mean"]
     std = metadata["metrics"]["train"]["pixel_std"]
 
-    logger.info(
-        f"Normalization: mean=[yellow]{mean:.4f}[/yellow], std=[yellow]{std:.4f}[/yellow]"
-    )
+    logger.info(f"Normalization: mean={mean:.4f}, std={std:.4f}")
 
     # Configure S3 filesystem using s3fs with SSL verification disabled
     s3_client = s3fs.S3FileSystem(

@@ -59,22 +59,26 @@ ______________________________________________________________________
 This repository is part of a thesis project exploring **MLOps best practices for enterprise ML platforms**. Key concepts demonstrated:
 
 ### MLflow Integration
+
 - **Experiment Tracking**: All training runs are logged with hyperparameters, metrics, and artifacts
 - **Model Registry**: Trained models are registered with semantic versioning (`ci.fashion-mnist-classifier`)
 - **Workflow Tagging**: CI/CD metadata (Argo Workflow UID, Docker image tag, DVC data version) is attached to each run for full traceability
 - **Automatic Model Logging**: PyTorch Lightning models are logged with input examples for signature inference
 
 ### Data Versioning with DVC
+
 - Training data is versioned in a separate [data-registry](https://github.com/OpenCloudHub/data-registry) repository
 - Normalization parameters (mean, std) are stored in DVC metadata and fetched at training/serving time
 - This ensures **training-serving consistency** — models always use the same preprocessing as during training
 
 ### Distributed Training with Ray
+
 - **Ray Train** with `TorchTrainer` enables multi-worker distributed data parallel (DDP) training
 - Checkpoints are stored in S3/MinIO for fault tolerance
 - The driver/worker architecture separates orchestration (MLflow logging) from computation
 
 ### Production Serving
+
 - **Ray Serve** provides autoscaling inference with FastAPI integration
 - Models are loaded from MLflow registry with automatic normalization parameter fetching
 - Hot-reload capability via `reconfigure()` for zero-downtime model updates
@@ -151,8 +155,8 @@ ______________________________________________________________________
 ### Key Data Flows
 
 1. **Training Flow**: GitHub Action → Argo Workflow → RayJob → DVC Data → Train → MLflow Registry
-2. **Serving Flow**: MLflow Model → Ray Serve Deployment → Istio Gateway → External Traffic
-3. **Traceability**: Every MLflow run is tagged with `argo_workflow_uid`, `docker_image_tag`, `dvc_data_version`
+1. **Serving Flow**: MLflow Model → Ray Serve Deployment → Istio Gateway → External Traffic
+1. **Traceability**: Every MLflow run is tagged with `argo_workflow_uid`, `docker_image_tag`, `dvc_data_version`
 
 ______________________________________________________________________
 

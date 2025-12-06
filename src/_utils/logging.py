@@ -1,110 +1,64 @@
-# ==============================================================================
-# Logging Configuration
-# ==============================================================================
-#
-# Rich-based logging utilities for pretty console output.
-#
-# Features:
-#   - Colorful console output with Rich formatting
-#   - Custom SUCCESS log level (between INFO and WARNING)
-#   - Section headers with rule formatting
-#   - Compatible with Ray distributed logging
-#
-# Usage:
-#   from src._utils.logging import get_logger, log_section
-#
-#   logger = get_logger(__name__)
-#   logger.info("Starting process...")
-#   logger.success("✨ Process completed!")
-#
-#   log_section("New Section", "🚀")
-#
-# Rich Markup:
-#   Logger supports Rich markup in messages:
-#   logger.info("Model: [bold cyan]ResNet18[/bold cyan]")
-#   logger.info("Accuracy: [yellow]95.2%[/yellow]")
-#
-# Ray Compatibility:
-#   - Loggers are configured per-process (driver and workers)
-#   - No duplicate handlers added on repeated get_logger() calls
-#   - Console output works in both local and distributed contexts
-#
-# ==============================================================================
-
 import logging
 import sys
+import warnings
+from os import getenv
 
+from loguru import logger
 from rich.console import Console
-from rich.logging import RichHandler
-from rich.theme import Theme
 
-# Custom theme
-CUSTOM_THEME = Theme(
-    {
-        "info": "cyan",
-        "warning": "yellow",
-        "error": "red bold",
-        "critical": "red bold reverse",
-        "success": "green bold",
-        "debug": "blue",
-    }
+LOG_LEVEL = getenv("LOG_LEVEL", "INFO").upper()
+
+console = Console(force_terminal=True)
+
+# Configure loguru
+logger.remove()
+logger.add(
+    sys.stdout,
+    level=LOG_LEVEL,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{extra[name]}</cyan> | <level>{message}</level>",
+    colorize=True,
+    filter=lambda record: "name" in record["extra"],  # Only for bound loggers
+)
+logger.add(
+    sys.stdout,
+    level=LOG_LEVEL,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <dim>{name}</dim> | <level>{message}</level>",
+    colorize=True,
+    filter=lambda record: "name" not in record["extra"],  # Intercepted stdlib
 )
 
-# Global console instance
-console = Console(
-    theme=CUSTOM_THEME,
-    file=sys.stdout,
-    force_terminal=True,
-    force_jupyter=False,
-    force_interactive=False,
-    color_system="truecolor",  # Use full color support
-    legacy_windows=False,
-)
 
-# Add custom SUCCESS level
-SUCCESS_LEVEL = 25
-logging.addLevelName(SUCCESS_LEVEL, "SUCCESS")
-
-
-def success(self, message, *args, **kwargs):
-    """Log a success message."""
-    if self.isEnabledFor(SUCCESS_LEVEL):
-        self._log(SUCCESS_LEVEL, message, args, **kwargs)
-
-
-logging.Logger.success = success
-
-
-def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger with RichHandler for pretty formatting.
-
-    According to Ray docs, you should configure logging AFTER ray.init()
-    but BEFORE creating workers. This function returns a logger that
-    will work in both driver and worker processes.
-    """
-    logger = logging.getLogger(name)
-
-    # Only configure if no handlers exist (avoid duplicate handlers)
-    if not logger.handlers:
-        handler = RichHandler(
-            console=console,
-            show_time=True,
-            show_path=False,
-            rich_tracebacks=True,
-            markup=True,
-            enable_link_path=False,
-            log_time_format="[%Y-%m-%d %H:%M:%S]",
+# Intercept stdlib → loguru
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
         )
-        handler.setFormatter(logging.Formatter("%(message)s"))
-
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-        logger.propagate = False
-
-    return logger
 
 
-def log_section(title: str, emoji: str = "📌") -> None:
-    """Print a section header - uses print() for compatibility with Ray."""
+logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+
+if LOG_LEVEL != "DEBUG":
+    # Silence noisy libs
+    for name in ["mlflow", "urllib3", "botocore", "boto3", "fsspec", "git", "ray"]:
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+    warnings.filterwarnings("ignore")
+
+
+def get_logger(name: str):
+    """Get a named logger."""
+    return logger.bind(name=name)
+
+
+def log_section(title: str, emoji: str = "📌"):
+    """Visual section separator using Rich."""
     console.rule(f"{emoji} {title}", style="bold cyan")
