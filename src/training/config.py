@@ -60,7 +60,7 @@ class TrainingConfig(BaseSettings):
     ray_num_workers: int = 1
 
     # DVC repository URL
-    dvc_repo: str = "https://github.com/OpenCloudHub/data-registry"
+    dvc_repo_url: str = "https://github.com/OpenCloudHub/data-registry"
     dvc_train_data_path: str = "data/fashion-mnist/processed/train/train.parquet"
     dvc_val_data_path: str = "data/fashion-mnist/processed/val/val.parquet"
     dvc_metrics_path: str = "data/fashion-mnist/metadata.json"

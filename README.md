@@ -293,7 +293,7 @@ python src/training/train.py --lr 0.005 --max-epochs 5
 
 ```bash
 RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
-    python src/training/train.py --batch-size 128 --lr 0.001 --max-epochs 10
+    python src/training/train.py --batch-size 128 --lr 0.001 --max-epochs 10 --num-workers 2
 ```
 
 **Training CLI Arguments:**
@@ -311,7 +311,7 @@ RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
 **Development mode (with hot reload):**
 
 ```bash
-serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/1" --reload
+serve run src.serving.serve:app_builder model_uri="models:/dev.fashion-mnist-classifier/1" --reload
 ```
 
 **Production mode (using config file):**
@@ -376,7 +376,7 @@ The application uses `pydantic-settings` for configuration management. All setti
 | `RAY_STORAGE_ENDPOINT`         | `http://minio...`              | S3/MinIO endpoint for Ray checkpoints |
 | `RAY_STORAGE_PATH`             | `ray-results`                  | S3 path for Ray checkpoints           |
 | `RAY_NUM_WORKERS`              | `1`                            | Default number of training workers    |
-| `DVC_REPO`                     | GitHub URL                     | DVC data registry repository          |
+| `DVC_REPO_URL`                     | GitHub URL                     | DVC data registry repository          |
 
 #### CI/CD Data Contract (Workflow Tags)
 

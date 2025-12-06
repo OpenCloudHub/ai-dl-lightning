@@ -91,7 +91,7 @@ def get_normalization_params(version: str) -> Tuple[float, float]:
     """
     metadata_content = dvc.api.read(
         TRAINING_CONFIG.dvc_metrics_path,
-        repo=TRAINING_CONFIG.dvc_repo,
+        repo=TRAINING_CONFIG.dvc_repo_url,
         rev=version,
     )
     metadata = json.loads(metadata_content)
@@ -116,25 +116,25 @@ def load_data(
         Tuple of (train_ds, val_ds, metadata)
     """
     logger.info(
-        f"Loading data version '{version}' from DVC repo '{TRAINING_CONFIG.dvc_repo}'"
+        f"Loading data version '{version}' from DVC repo '{TRAINING_CONFIG.dvc_repo_url}'"
     )
     log_section(f"Loading Data Version {version}", "📦")
-    logger.info(f"DVC repo: {TRAINING_CONFIG.dvc_repo}")
+    logger.info(f"DVC repo: {TRAINING_CONFIG.dvc_repo_url}")
 
     # Get URLs from DVC
     train_path = dvc.api.get_url(
         TRAINING_CONFIG.dvc_train_data_path,
-        repo=TRAINING_CONFIG.dvc_repo,
+        repo=TRAINING_CONFIG.dvc_repo_url,
         rev=version,
     )
     val_path = dvc.api.get_url(
         TRAINING_CONFIG.dvc_val_data_path,
-        repo=TRAINING_CONFIG.dvc_repo,
+        repo=TRAINING_CONFIG.dvc_repo_url,
         rev=version,
     )
 
     metadata_content = dvc.api.read(
-        TRAINING_CONFIG.dvc_metrics_path, repo=TRAINING_CONFIG.dvc_repo, rev=version
+        TRAINING_CONFIG.dvc_metrics_path, repo=TRAINING_CONFIG.dvc_repo_url, rev=version
     )
     metadata = json.loads(metadata_content)
 

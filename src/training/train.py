@@ -192,7 +192,7 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         # Log DVC metadata as parameters for traceability
         mlflow.log_params(
             {
-                "dvc_repo": TRAINING_CONFIG.dvc_repo,
+                "dvc_repo_url": TRAINING_CONFIG.dvc_repo_url,
                 "dvc_train_data_path": TRAINING_CONFIG.dvc_train_data_path,
                 "dvc_val_data_path": TRAINING_CONFIG.dvc_val_data_path,
                 "dvc_metrics_path": TRAINING_CONFIG.dvc_metrics_path,
