@@ -64,7 +64,7 @@ from ray.train.lightning import (
 from ray.train.torch import TorchTrainer
 
 from src._utils.logging import get_logger, log_section
-from src.training.config import TRAINING_CONFIG, WORKFLOW_TAGS
+from src.training.config import TRAINING_CONFIG, get_workflow_tags
 from src.training.data import load_data
 from src.training.model import SimpleImageClassifier
 
@@ -175,16 +175,9 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
     mlflow.set_experiment(TRAINING_CONFIG.mlflow_experiment_name)
     logger.info(f"Experiment: {TRAINING_CONFIG.mlflow_experiment_name}")
 
-    # ⚠️ IMPORTANT: Tag training rune with workflow tags
-    workflow_tags = {
-        "argo_workflow_uid": WORKFLOW_TAGS.argo_workflow_uid,
-        "docker_image_tag": WORKFLOW_TAGS.docker_image_tag,
-        "dvc_data_version": data_version,
-    }
-
     with mlflow.start_run(
         run_name=train_driver_cnfg.get("train_loop_config").get("run_name"),
-        tags=workflow_tags,
+        tags=get_workflow_tags().model_dump(),  # Convert to dict for MLflow tags
     ) as active_run:
         mlflow_run_id = active_run.info.run_id
         logger.success(f"✨ Started MLflow run: {mlflow_run_id}")
@@ -310,6 +303,7 @@ def main():
     args = parser.parse_args()
 
     num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers
+    workflow_tags = get_workflow_tags()
 
     log_section("Training Configuration", "⚙️")
     logger.info(f"Run name: {args.run_name or 'auto-generated'}")
@@ -319,13 +313,13 @@ def main():
     logger.info(f"Num workers: {num_workers}")
 
     log_section("CI/CD Data Contract from ENV", "📋")
-    logger.info(f"Argo Workflow UID: {WORKFLOW_TAGS.argo_workflow_uid}")
-    logger.info(f"Docker image tag: {WORKFLOW_TAGS.docker_image_tag}")
-    logger.info(f"DVC data version: {WORKFLOW_TAGS.dvc_data_version}")
+    logger.info(f"Argo Workflow UID: {workflow_tags.argo_workflow_uid}")
+    logger.info(f"Docker image tag: {workflow_tags.docker_image_tag}")
+    logger.info(f"DVC data version: {workflow_tags.dvc_data_version}")
 
     # Build training driver configuration
     train_driver_cnfg = {
-        "data_version": WORKFLOW_TAGS.dvc_data_version,
+        "data_version": workflow_tags.dvc_data_version,
         "num_workers": num_workers,
         "train_loop_config": {
             "batch_size": args.batch_size,

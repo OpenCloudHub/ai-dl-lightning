@@ -42,7 +42,7 @@ ______________________________________________________________________
 
 <h2 id="about">🎯 About</h2>
 
-This repository demonstrates a **production-grade MLOps implementation** for image classification using **PyTorch Lightning** and the **Fashion MNIST** dataset. It showcases best practices for combining modern ML engineering tools including:
+This repository demonstrates a **demo MLOps implementation** for image classification using **PyTorch Lightning** and the **Fashion MNIST** dataset. It showcases best practices for combining modern ML engineering tools including:
 
 - **Experiment Tracking & Model Registry** with MLflow
 - **Distributed Training** with Ray Train (DDP strategy)
@@ -101,62 +101,123 @@ ______________________________________________________________________
 <h2 id="architecture">🏗️ Architecture</h2>
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            GitHub Actions                                   │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────────────────────┐ │
-│  │ CI Code Quality │  │ CI Docker Build  │  │     MLOps Pipeline          │ │
-│  │   (Ruff/Pre-    │  │  (Training +     │  │  (Trigger Argo Workflow)    │ │
-│  │    commit)      │  │   Serving)       │  │                             │ │
-│  └─────────────────┘  └──────────────────┘  └──────────────┬──────────────┘ │
-└────────────────────────────────────────────────────────────┼────────────────┘
-                                                             │
-                                                             ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Kubernetes Cluster                                  │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                        Argo Workflows                                   ││
-│  │  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────────────┐  ││
-│  │  │  Resolve │───▶│   Train  │───▶│  Evaluate│───▶│  Deploy/Promote  │  ││
-│  │  │   Data   │    │ (RayJob) │    │  Model   │    │    (Optional)    │  ││
-│  │  └──────────┘    └────┬─────┘    └──────────┘    └──────────────────┘  ││
-│  └───────────────────────┼─────────────────────────────────────────────────┘│
-│                          │                                                  │
-│  ┌───────────────────────▼─────────────────────────────────────────────────┐│
-│  │                     Ray Cluster (KubeRay)                               ││
-│  │  ┌─────────────────────────────────────────────────────────────────┐   ││
-│  │  │                    Training Job                                  │   ││
-│  │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                          │   ││
-│  │  │  │ Worker 0│  │ Worker 1│  │ Worker N│  ◀── Ray Data Shards     │   ││
-│  │  │  │  (DDP)  │  │  (DDP)  │  │  (DDP)  │                          │   ││
-│  │  │  └────┬────┘  └────┬────┘  └────┬────┘                          │   ││
-│  │  │       └────────────┼───────────-┘                               │   ││
-│  │  │                    ▼                                             │   ││
-│  │  │            Ray Train Driver                                      │   ││
-│  │  │         (MLflow logging, checkpoints)                            │   ││
-│  │  └─────────────────────────────────────────────────────────────────┘   ││
-│  │                                                                         ││
-│  │  ┌─────────────────────────────────────────────────────────────────┐   ││
-│  │  │                    Serving Deployment                            │   ││
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │   ││
-│  │  │  │  Replica 1  │  │  Replica 2  │  │  Replica N  │ ◀── Autoscale│   ││
-│  │  │  │  (FastAPI)  │  │  (FastAPI)  │  │  (FastAPI)  │              │   ││
-│  │  │  └─────────────┘  └─────────────┘  └─────────────┘              │   ││
-│  │  └─────────────────────────────────────────────────────────────────┘   ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
-│  │    MLflow    │  │    MinIO     │  │  Istio       │                      │
-│  │   Tracking   │  │  (S3/DVC)    │  │  Gateway     │                      │
-│  └──────────────┘  └──────────────┘  └──────────────┘                      │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                      GitHub                                                  │
+│                                                                                              │
+│  ┌────────────────────────────────────────────────────┐    ┌──────────────────────────────┐  │
+│  │              ai-dl-lightning (this repo)           │    │   data-registry (DVC repo)   │  │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌────────────┐  │    │  ┌────────────────────────┐  │  │
+│  │  │CI Code Quality│ │CI Docker Build│ │MLOps Pipeline│  │    │  │  .dvc files (pointers) │  │  │
+│  │  └──────────────┘ └──────────────┘ └─────┬──────┘  │    │  │  fashion-mnist-v1.0.0  │  │  │
+│  └──────────────────────────────────────────┼─────────┘    │  │  fashion-mnist-v1.1.0  │  │  │
+│                                             │              │  └────────────────────────┘  │  │
+│                                             │              └───────────────┬──────────────┘  │
+└─────────────────────────────────────────────┼──────────────────────────────┼─────────────────┘
+                                              │                              │
+                      Trigger Argo Workflow   │     dvc.api.get_url()        │
+                                              ▼     (resolve data paths)     ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   Kubernetes Cluster                                         │
+│                                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │                              Argo Workflows                                            │  │
+│  │  ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────────────────────┐  │  │
+│  │  │  Resolve   │───▶│   Train    │───▶│  Evaluate  │───▶│     Deploy / Promote       │  │  │
+│  │  │ DVC Data   │    │  (RayJob)  │    │   Model    │    │       (Optional)           │  │  │
+│  │  │  Version   │    │            │    │            │    │                            │  │  │
+│  │  └─────┬──────┘    └─────┬──────┘    └────────────┘    └────────────────────────────┘  │  │
+│  │        │                 │                                                             │  │
+│  │        │ DVC_DATA_VERSION│                                                             │  │
+│  │        │ (env var)       │                                                             │  │
+│  └────────┼─────────────────┼─────────────────────────────────────────────────────────────┘  │
+│           │                 │                                                                │
+│           │                 ▼                                                                │
+│  ┌────────┼───────────────────────────────────────────────────────────────────────────────┐  │
+│  │        │            Ray Cluster (KubeRay)                                              │  │
+│  │        │                                                                               │  │
+│  │        │  ┌─────────────────────────────────────────────────────────────────────────┐  │  │
+│  │        │  │                         Training Job                                    │  │  │
+│  │        │  │                                                                         │  │  │
+│  │        │  │   ┌──────────────────────────────────────────────────────────────────┐  │  │  │
+│  │        │  │   │  Ray Train Driver                                                │  │  │  │
+│  │        │  │   │  • Load data via DVC (dvc.api) ◀───────────────────────┐         │  │  │  │
+│  │        │  │   │  • Fetch normalization params (mean, std)              │         │  │  │  │
+│  │        │  │   │  • Log to MLflow (metrics, params, artifacts)          │         │  │  │  │
+│  │        │  │   │  • Register model to MLflow Registry                   │         │  │  │  │
+│  │        └──┼───┼────────────────────────────────────────────────────────┼─────────┼──┼──┘  │
+│  │           │   └──────────────────────────────────────────────────────┘  │         │  │    │
+│  │           │                           │                                 │         │  │    │
+│  │           │        Shard data         ▼                                 │         │  │    │
+│  │           │   ┌───────────────────────────────────────────┐             │         │  │    │
+│  │           │   │  ┌─────────┐  ┌─────────┐  ┌─────────┐    │             │         │  │    │
+│  │           │   │  │Worker 0 │  │Worker 1 │  │Worker N │    │◀── Parquet  │         │  │    │
+│  │           │   │  │  (DDP)  │  │  (DDP)  │  │  (DDP)  │    │    from S3  │         │  │    │
+│  │           │   │  └─────────┘  └─────────┘  └─────────┘    │             │         │  │    │
+│  │           │   └───────────────────────────────────────────┘             │         │  │    │
+│  │           │                                                             │         │  │    │
+│  │           └─────────────────────────────────────────────────────────────┘         │  │    │
+│  │                                                                                   │  │    │
+│  │  ┌─────────────────────────────────────────────────────────────────────────────┐  │  │    │
+│  │  │                         Serving Deployment                                  │  │  │    │
+│  │  │                                                                             │  │  │    │
+│  │  │  Load model from ──▶ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │  │  │    │
+│  │  │  MLflow Registry     │  Replica 1  │  │  Replica 2  │  │  Replica N  │      │  │  │    │
+│  │  │                      │  (FastAPI)  │  │  (FastAPI)  │  │  (FastAPI)  │      │  │  │    │
+│  │  │  Fetch norm params ◀─┴─────────────┴──┴─────────────┴──┴─────────────┴──────┼──┘  │    │
+│  │  │  from DVC metadata   ▲                                                      │     │    │
+│  │  │                      │ Autoscale (1-N replicas)                             │     │    │
+│  │  └──────────────────────┼──────────────────────────────────────────────────────┘     │    │
+│  └─────────────────────────┼────────────────────────────────────────────────────────────┘    │
+│                            │                                                                 │
+│  ┌─────────────────────────┼─────────────────────────────────────────────────────────────┐   │
+│  │                         │           Platform Services                                 │   │
+│  │  ┌──────────────────┐   │   ┌───────────────────────────────┐   ┌──────────────────┐  │   │
+│  │  │     MLflow       │   │   │           MinIO               │   │      Istio       │  │   │
+│  │  │  ┌────────────┐  │   │   │  ┌─────────────────────────┐  │   │     Gateway      │  │   │
+│  │  │  │ Tracking   │  │   │   │  │    s3://dvcstore/       │◀─┼───┘                  │  │   │
+│  │  │  │ Server     │  │   │   │  │  ┌───────────────────┐  │  │                      │  │   │
+│  │  │  ├────────────┤  │   │   │  │  │ fashion-mnist/    │  │  │   External Traffic   │  │   │
+│  │  │  │ Model      │  │   │   │  │  │  train.parquet    │  │  │         ▲            │  │   │
+│  │  │  │ Registry   │  │   │   │  │  │  val.parquet      │  │  │         │            │  │   │
+│  │  │  └────────────┘  │   │   │  │  │  metadata.json    │◀─┼──┼─ normalization params│  │   │
+│  │  └──────────────────┘   │   │  │  └───────────────────┘  │  │                      │  │   │
+│  │                         │   │  │                         │  │                      │  │   │
+│  │                         │   │  │  ray-results/ (ckpts)   │  │                      │  │   │
+│  │                         │   │  └─────────────────────────┘  │                      │  │   │
+│  │                         │   └───────────────────────────────┘                      │  │   │
+│  └─────────────────────────┼──────────────────────────────────────────────────────────┘  │   │
+│                            │                                                              │   │
+└────────────────────────────┼──────────────────────────────────────────────────────────────┘   │
+                             │                                                                  │
+                             └──────────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Data Flows
 
-1. **Training Flow**: GitHub Action → Argo Workflow → RayJob → DVC Data → Train → MLflow Registry
-1. **Serving Flow**: MLflow Model → Ray Serve Deployment → Istio Gateway → External Traffic
-1. **Traceability**: Every MLflow run is tagged with `argo_workflow_uid`, `docker_image_tag`, `dvc_data_version`
+1. **Data Versioning (DVC)**
+
+   - Data is versioned in separate `data-registry` repo with Git tags (e.g., `fashion-mnist-v1.0.0`)
+   - DVC `.dvc` files point to Parquet files stored in MinIO (`s3://dvcstore/`)
+   - `metadata.json` contains normalization parameters (mean, std) computed from training set
+
+1. **Training Flow**
+
+   - Argo Workflow resolves DVC version → sets `DVC_DATA_VERSION` env var
+   - Ray Train Driver fetches data paths via `dvc.api.get_url()`
+   - Parquet files loaded directly from S3 into Ray Data, sharded across workers
+   - Model + normalization params logged to MLflow with `dvc_data_version` tag
+
+1. **Serving Flow**
+
+   - Model loaded from MLflow Registry
+   - `dvc_data_version` tag extracted from training run metadata
+   - Normalization params fetched from DVC `metadata.json` (same version as training)
+   - **This ensures training-serving consistency!**
+
+1. **Traceability**
+
+   - Every MLflow run tagged with: `argo_workflow_uid`, `docker_image_tag`, `dvc_data_version`
+   - Model can be traced back to: exact data version, Docker image, and workflow run
 
 ______________________________________________________________________
 
@@ -166,14 +227,16 @@ ______________________________________________________________________
 
 - Docker
 - VS Code with DevContainers extension (recommended)
+- Access to MLflow tracking server (local or remote)
+- Access to MinIO/S3 for DVC data (optional for local development)
 
 ### Setup
 
 1. **Clone the repository**
 
    ```bash
-      git clone https://github.com/opencloudhub/ai-ml-lighting.git
-      cd ai-ml-lighting
+   git clone https://github.com/opencloudhub/ai-dl-lightning.git
+   cd ai-dl-lightning
    ```
 
 1. **Open in DevContainer** (Recommended)
@@ -183,17 +246,27 @@ ______________________________________________________________________
    Or **setup locally without DevContainer**:
 
    ```bash
-      # Install UV
-      curl -LsSf https://astral.sh/uv/install.sh | sh
+   # Install UV
+   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      # Install dependencies
-      uv sync --dev
+   # Install dependencies
+   uv sync --dev
+   ```
+
+1. **Configure environment variables**
+
+   ```bash
+   # For local Docker Compose setup
+   source .env.docker
+
+   # For Minikube/Kubernetes setup
+   source .env.minikube
    ```
 
 1. **Start local MLflow tracking server**
 
    ```bash
-      mlflow server --host 0.0.0.0 --port 8081
+   mlflow server --host 0.0.0.0 --port 8081
    ```
 
    Access at `http://localhost:8081`
@@ -201,7 +274,7 @@ ______________________________________________________________________
 1. **Start local Ray cluster**
 
    ```bash
-      ray start --head --num-cpus 8
+   ray start --head --num-cpus 8
    ```
 
    Access dashboard at `http://127.0.0.1:8265`
@@ -210,36 +283,52 @@ You're now ready to develop, train and serve models locally!
 
 ### Training
 
-**Basic training:**
+**Basic training (local):**
 
 ```bash
-python src/training/train.py --lr 0.005
+python src/training/train.py --lr 0.005 --max-epochs 5
 ```
 
-or use the Job API like we would do in practise too
+**Using Ray Job API (production-like):**
 
 ```bash
-RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python src/training/train.py
+RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
+    python src/training/train.py --batch-size 128 --lr 0.001 --max-epochs 10 --num-workers 2
 ```
+
+**Training CLI Arguments:**
+
+| Argument        | Default        | Description             |
+| --------------- | -------------- | ----------------------- |
+| `--run-name`    | auto-generated | MLflow run name         |
+| `--batch-size`  | 128            | Training batch size     |
+| `--lr`          | 0.001          | Learning rate           |
+| `--max-epochs`  | 2              | Maximum training epochs |
+| `--num-workers` | from config    | Number of Ray workers   |
 
 ### Model Serving
 
-Ensure you have a trained model to load either from local folder or from mlflow by setting the 'MODEL_URI' environment variable.
-
-**Start the serving application:**
+**Development mode (with hot reload):**
 
 ```bash
-serve run src.serving.serve:app_builder model_uri="models:/ci.fashion-mnist-classifier/8" --reload
+serve run src.serving.serve:app_builder model_uri="models:/dev.fashion-mnist-classifier/1" --reload
 ```
 
-or even better and more production ready, run:
+**Production mode (using config file):**
 
 ```bash
+# Build serve config
 serve build src.serving.serve:app_builder -o src/serving/serve_config.yaml
+
+# Deploy
 serve deploy src/serving/serve_config.yaml
 ```
 
-Access Swagger docs at `http://localhost:8000/docs`
+Access:
+
+- Swagger docs: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/health`
+- Model info: `http://localhost:8000/info`
 
 ### Testing
 
@@ -249,34 +338,100 @@ Access Swagger docs at `http://localhost:8000/docs`
 python tests/test_mnist_classifier.py
 ```
 
-Or use the interactive Swagger UI at `http://localhost:8000/docs`
+This runs comprehensive tests including:
+
+- Health check validation
+- Batch predictions with real Fashion MNIST images
+- Single image predictions
+- Error handling for invalid inputs
+- Different batch sizes
 
 ### Production Training
 
-Trigger the workflow dispatch in Github Actions at `https://github.com/OpenCloudHub/ai-ml-sklearn/actions/workflows/train.yaml`
+Trigger the MLOps pipeline via GitHub Actions:
+
+1. Navigate to [Actions → MLOps Pipeline](https://github.com/OpenCloudHub/ai-dl-lightning/actions/workflows/train.yaml)
+1. Click "Run workflow"
+1. Configure parameters:
+   - `dvc_data_version`: Data version tag (e.g., `fashion-mnist-v1.0.0`)
+   - `compute_type`: CPU/GPU configuration
+   - `comparison_metric`: Metric for model comparison (default: `val_acc`)
+   - `comparison_threshold`: Minimum improvement threshold
+
+______________________________________________________________________
+
+<h2 id="configuration">⚙️ Configuration</h2>
+
+### Environment Variables
+
+The application uses `pydantic-settings` for configuration management. All settings can be overridden via environment variables.
+
+#### Training Configuration (`src/training/config.py`)
+
+| Variable                       | Default                        | Description                           |
+| ------------------------------ | ------------------------------ | ------------------------------------- |
+| `MLFLOW_TRACKING_URI`          | *required*                     | MLflow tracking server URL            |
+| `MLFLOW_EXPERIMENT_NAME`       | `fashion-mnist`                | MLflow experiment name                |
+| `MLFLOW_REGISTERED_MODEL_NAME` | `dev.fashion-mnist-classifier` | Model registry name                   |
+| `RAY_STORAGE_ENDPOINT`         | `http://minio...`              | S3/MinIO endpoint for Ray checkpoints |
+| `RAY_STORAGE_PATH`             | `ray-results`                  | S3 path for Ray checkpoints           |
+| `RAY_NUM_WORKERS`              | `1`                            | Default number of training workers    |
+| `DVC_REPO_URL`                 | GitHub URL                     | DVC data registry repository          |
+
+#### CI/CD Data Contract (Workflow Tags)
+
+These environment variables are **required** and set by Argo Workflows in production:
+
+| Variable            | Description                                              |
+| ------------------- | -------------------------------------------------------- |
+| `ARGO_WORKFLOW_UID` | Unique identifier for the Argo workflow run              |
+| `DOCKER_IMAGE_TAG`  | Docker image tag used for training (for reproducibility) |
+| `DVC_DATA_VERSION`  | Data version from DVC (e.g., `fashion-mnist-v1.0.0`)     |
+
+For local development, set these to `"DEV"` in your `.env.docker` or `.env.minikube` file.
+
+#### Serving Configuration (`src/serving/config.py`)
+
+| Variable             | Default | Description                        |
+| -------------------- | ------- | ---------------------------------- |
+| `REQUEST_MAX_LENGTH` | `1000`  | Maximum batch size for predictions |
+
+### Environment Files
+
+- **`.env.docker`**: For local Docker Compose development
+- **`.env.minikube`**: For Minikube/Kubernetes development
 
 ______________________________________________________________________
 
 <h2 id="project-structure">📁 Project Structure</h2>
 
 ```
-ai-ml-lightning/
+ai-dl-lightning/
 ├── src/
-│   ├── training/                       # Training and optimization scripts
-│   │   ├── train.py
-│   │   └── evaluate.py
-│   ├── serving/                        # Model serving (Ray Serve/FastAPI)
-│   │   └── serve.py
+│   ├── training/                       # Training pipeline
+│   │   ├── train.py                    # Main training script (Ray Train + MLflow)
+│   │   ├── model.py                    # PyTorch Lightning model (ResNet18)
+│   │   ├── data.py                     # DVC data loading with Ray Data
+│   │   └── config.py                   # Training configuration (pydantic-settings)
+│   ├── serving/                        # Model serving (Ray Serve + FastAPI)
+│   │   ├── serve.py                    # Ray Serve deployment with FastAPI
+│   │   ├── schemas.py                  # Pydantic request/response schemas
+│   │   ├── config.py                   # Serving configuration
+│   │   └── serve_config.yaml           # Ray Serve deployment config
 │   └── _utils/                         # Shared utilities
-│       ├── logging_config.py
-│       └── mlflow_tags.py              # Set up mandatory MLflow tags needed for production workflow
-├── tests/                              # Unit tests
-├── .devcontainer/                      # VS Code DevContainer config
+│       └── logging.py                  # Rich logging configuration
+├── tests/
+│   └── test_mnist_classifier.py        # API integration tests
 ├── .github/workflows/                  # CI/CD workflows
-├── Dockerfile                          # Multi-stage container build
-├── MLproject                           # MLflow project definition
-├── pyproject.toml                      # Project dependencies and config
-└── uv.lock                             # Dependency lock file
+│   ├── ci-code-quality.yaml            # Ruff linting and pre-commit checks
+│   ├── ci-docker-build-push.yaml       # Multi-stage Docker builds
+│   └── train.yaml                      # MLOps pipeline trigger
+├── .devcontainer/                      # VS Code DevContainer config
+├── Dockerfile                          # Multi-stage build (training + serving)
+├── pyproject.toml                      # Project dependencies (UV)
+├── uv.lock                             # Dependency lock file
+├── .env.docker                         # Local Docker Compose environment
+└── .env.minikube                       # Minikube/K8s environment
 ```
 
 ______________________________________________________________________
@@ -299,14 +454,17 @@ ______________________________________________________________________
 
 Organization Link: [https://github.com/OpenCloudHub](https://github.com/OpenCloudHub)
 
-Project Link: [https://github.com/opencloudhub/ai-ml-lightning](https://github.com/opencloudhub/ai-ml-lightning)
+Project Link: [https://github.com/opencloudhub/ai-dl-lightning](https://github.com/opencloudhub/ai-dl-lightning)
 
 ______________________________________________________________________
 
 <h2 id="acknowledgements">🙏 Acknowledgements</h2>
 
-- [MLflow](https://mlflow.org/) - ML lifecycle management
-- [Ray](https://ray.io/) - Distributed computing and serving
+- [MLflow](https://mlflow.org/) - ML lifecycle management and model registry
+- [Ray](https://ray.io/) - Distributed computing, training, and serving
+- [PyTorch Lightning](https://lightning.ai/) - Deep learning framework
+- [DVC](https://dvc.org/) - Data version control
 - [UV](https://github.com/astral-sh/uv) - Fast Python package manager
+- [Argo Workflows](https://argoproj.github.io/argo-workflows/) - Kubernetes-native workflow orchestration
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

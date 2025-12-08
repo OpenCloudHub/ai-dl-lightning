@@ -68,4 +68,8 @@ class TrainingConfig(BaseSettings):
 
 # Singleton instances
 TRAINING_CONFIG = TrainingConfig()
-WORKFLOW_TAGS = WorkflowTags()
+
+
+def get_workflow_tags() -> WorkflowTags:
+    """Get workflow tags. Only call this during training, not at import time."""
+    return WorkflowTags()
