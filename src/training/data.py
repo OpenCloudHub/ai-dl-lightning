@@ -120,21 +120,27 @@ def load_data(
     )
     log_section(f"Loading Data Version {version}", "📦")
     logger.info(f"DVC repo: {TRAINING_CONFIG.dvc_repo_url}")
+    logger.info(f"DVC remote: {TRAINING_CONFIG.dvc_remote}")
 
     # Get URLs from DVC
     train_path = dvc.api.get_url(
         TRAINING_CONFIG.dvc_train_data_path,
         repo=TRAINING_CONFIG.dvc_repo_url,
         rev=version,
+        remote=TRAINING_CONFIG.dvc_remote,
     )
     val_path = dvc.api.get_url(
         TRAINING_CONFIG.dvc_val_data_path,
         repo=TRAINING_CONFIG.dvc_repo_url,
         rev=version,
+        remote=TRAINING_CONFIG.dvc_remote,
     )
 
     metadata_content = dvc.api.read(
-        TRAINING_CONFIG.dvc_metrics_path, repo=TRAINING_CONFIG.dvc_repo_url, rev=version
+        TRAINING_CONFIG.dvc_metrics_path,
+        repo=TRAINING_CONFIG.dvc_repo_url,
+        rev=version,
+        remote=TRAINING_CONFIG.dvc_remote,
     )
     metadata = json.loads(metadata_content)
 

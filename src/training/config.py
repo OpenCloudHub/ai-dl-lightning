@@ -61,6 +61,9 @@ class TrainingConfig(BaseSettings):
 
     # DVC repository URL
     dvc_repo_url: str = "https://github.com/OpenCloudHub/data-registry"
+    dvc_remote: str | None = (
+        None  # DVC remote name (e.g., 'docker', 'minikube'), None for default
+    )
     dvc_train_data_path: str = "data/fashion-mnist/processed/train/train.parquet"
     dvc_val_data_path: str = "data/fashion-mnist/processed/val/val.parquet"
     dvc_metrics_path: str = "data/fashion-mnist/metadata.json"

@@ -61,7 +61,7 @@ from ray.train.lightning import (
     RayTrainReportCallback,
     prepare_trainer,
 )
-from ray.train.torch import TorchTrainer
+from ray.train.torch import TorchConfig, TorchTrainer
 
 from src._utils.logging import get_logger, log_section
 from src.training.config import TRAINING_CONFIG, get_workflow_tags
@@ -83,9 +83,22 @@ def train_fn_per_worker(train_loop_cnfg: dict):
 
     worker_logger = get_logger(__name__)
 
-    worker_logger.info(
-        f"🎯 Worker {get_context().get_world_rank()} of {get_context().get_world_size()} started"
-    )
+    # Get worker info for demo visibility
+    rank = get_context().get_world_rank()
+    world_size = get_context().get_world_size()
+
+    worker_logger.info(f"🎯 Worker {rank} of {world_size} started")
+
+    # Log GPU assignment for distributed training demo
+    if torch.cuda.is_available():
+        device = torch.cuda.current_device()
+        device_name = torch.cuda.get_device_name(device)
+        gpu_memory = torch.cuda.get_device_properties(device).total_memory / 1e9
+        worker_logger.info(
+            f"🖥️  Worker {rank} using GPU {device}: {device_name} ({gpu_memory:.1f}GB)"
+        )
+    else:
+        worker_logger.info(f"🖥️  Worker {rank} using CPU")
 
     # Load data shard on each worker
     train_ds_shard = get_dataset_shard("train")
@@ -150,8 +163,9 @@ def train_fn_per_worker(train_loop_cnfg: dict):
         worker_logger.info("🆕 Starting training from scratch")
         trainer.fit(model, train_dataloaders=train_iter, val_dataloaders=val_iter)
 
-    if rank0:
-        worker_logger.success("✨ Training completed on rank 0")
+    # Log completion with worker info (only rank 0 to avoid duplicate logs)
+    if rank == 0:
+        worker_logger.success(f"✨ All {world_size} workers completed training")
 
 
 def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
@@ -208,7 +222,10 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
         logger.info(f"Learning rate: {train_loop_config.get('lr')}")
         logger.info(f"Max epochs: {train_loop_config.get('max_epochs')}")
 
-        use_gpu = torch.cuda.is_available() and torch.cuda.device_count() >= num_workers
+        gpu_per_worker = train_driver_cnfg.get("gpu_per_worker")
+        use_gpu = gpu_per_worker is not None or (
+            torch.cuda.is_available() and torch.cuda.device_count() >= num_workers
+        )
         device_tag = "gpu" if use_gpu else "cpu"
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -226,13 +243,31 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
             secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         )
 
+        # Configure GPU resources per worker
+        # Note: Fractional GPUs require Gloo backend since NCCL doesn't support
+        # multiple processes on the same GPU
+        if gpu_per_worker is not None:
+            scaling_config = ScalingConfig(
+                num_workers=num_workers,
+                use_gpu=True,
+                resources_per_worker={"GPU": gpu_per_worker},
+            )
+            # Use Gloo backend for fractional GPU (NCCL doesn't support shared GPUs)
+            torch_config = TorchConfig(backend="gloo")
+            logger.info("Using Gloo backend for fractional GPU support")
+        else:
+            scaling_config = ScalingConfig(
+                num_workers=num_workers,
+                use_gpu=use_gpu,
+            )
+            # Use default backend (NCCL for GPU, Gloo for CPU)
+            torch_config = TorchConfig()
+
         trainer = TorchTrainer(
             train_loop_per_worker=train_fn_per_worker,
             train_loop_config=train_loop_config,
-            scaling_config=ScalingConfig(
-                num_workers=num_workers,
-                use_gpu=use_gpu,
-            ),
+            scaling_config=scaling_config,
+            torch_config=torch_config,
             run_config=RunConfig(
                 name=train_driver_cnfg.get("train_loop_config").get(
                     "run_name", "torch_train_run"
@@ -300,9 +335,37 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--max-epochs", type=int, default=2)
     parser.add_argument("--num-workers", type=int)
+    parser.add_argument(
+        "--gpu-per-worker",
+        type=float,
+        default=None,
+        help="Fractional GPU per worker (e.g., 0.5 for 2 workers on 1 GPU). "
+        "If not set, uses 1 GPU per worker when GPUs are available.",
+    )
     args = parser.parse_args()
 
     num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers
+    gpu_per_worker = args.gpu_per_worker
+
+    # Validate GPU configuration
+    num_gpus_available = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    if gpu_per_worker is not None:
+        if num_gpus_available == 0:
+            logger.warning(
+                "⚠️ --gpu-per-worker specified but no GPUs available. Running on CPU."
+            )
+            gpu_per_worker = None
+        else:
+            total_gpu_requested = num_workers * gpu_per_worker
+            if total_gpu_requested > num_gpus_available:
+                raise ValueError(
+                    f"❌ Invalid GPU configuration: {num_workers} workers × {gpu_per_worker} GPU/worker "
+                    f"= {total_gpu_requested} GPUs requested, but only {num_gpus_available} available."
+                )
+            logger.info(
+                f"🎮 GPU allocation: {num_workers} workers × {gpu_per_worker} GPU = "
+                f"{total_gpu_requested}/{num_gpus_available} GPUs"
+            )
     workflow_tags = get_workflow_tags()
 
     log_section("Training Configuration", "⚙️")
@@ -311,6 +374,8 @@ def main():
     logger.info(f"Learning rate: {args.lr}")
     logger.info(f"Max epochs: {args.max_epochs}")
     logger.info(f"Num workers: {num_workers}")
+    logger.info(f"GPU per worker: {gpu_per_worker or 'auto'}")
+    logger.info(f"GPUs available: {num_gpus_available}")
 
     log_section("CI/CD Data Contract from ENV", "📋")
     logger.info(f"Argo Workflow UID: {workflow_tags.argo_workflow_uid}")
@@ -321,6 +386,7 @@ def main():
     train_driver_cnfg = {
         "data_version": workflow_tags.dvc_data_version,
         "num_workers": num_workers,
+        "gpu_per_worker": gpu_per_worker,
         "train_loop_config": {
             "batch_size": args.batch_size,
             "lr": args.lr,

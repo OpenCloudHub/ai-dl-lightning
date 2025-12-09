@@ -79,7 +79,7 @@ app = FastAPI(
 
 
 @serve.deployment(
-    ray_actor_options={"num_cpus": 1},
+    # ray_actor_options={"num_cpus": 1},
 )
 @serve.ingress(app)
 class FashionMNISTClassifier:
