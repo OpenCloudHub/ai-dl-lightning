@@ -14,7 +14,7 @@ on:
         type: string
         default: 'python src/training/train.py'
       training_args:
-        description: 'Additional training arguments (e.g --num-workers 2 --max-epochs 10)'
+        description: 'Additional training arguments (e.g --num-workers 2 --gpu-per-worker 0.2 --max-epochs 10)'
         required: false
         type: string
         default: ''

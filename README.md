@@ -513,6 +513,8 @@ ray start --head --num-cpus 8
 
 # Run distributed training locally (2 workers)
 python src/training/train.py --num-workers 2 --max-epochs 5
+
+python src/training/train.py --num-workers 2 --gpu-per-worker 0.3
 ```
 
 Requires the OpenCloudHub platform deployed via the [gitops](https://github.com/opencloudhub/gitops) repository.
@@ -535,8 +537,8 @@ ______________________________________________________________________
 # Single worker (development)
 python src/training/train.py --max-epochs 5 --lr 0.001
 
-# Multi-worker DDP (distributed)
-python src/training/train.py --num-workers 4 --max-epochs 10 --batch-size 128
+# Multi-worker DDP (Distributed Data Parallel) on sharded GPU
+python src/training/train.py --num-workers 2 --gpu-per-worker 0.3 --max-epochs 10 --batch-size 128
 
 # Via Ray Job API (production-like)
 RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
@@ -552,6 +554,7 @@ RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
 | `--lr`          | `0.001`        | Learning rate         |
 | `--max-epochs`  | `2`            | Training epochs       |
 | `--num-workers` | from config    | Number of DDP workers |
+| `--gpu-per-worker` | from config    | Number of DDP workers |
 
 ### Serving
 

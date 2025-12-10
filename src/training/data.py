@@ -144,6 +144,9 @@ def load_data(
     )
     metadata = json.loads(metadata_content)
 
+    logger.info(f"DEBUG train_path: {train_path}")
+    logger.info(f"DEBUG val_path: {val_path}")
+
     logger.info(f"Loaded dataset: {metadata['dataset']['name']} ({version})")
 
     # Extract normalization statistics from metadata
