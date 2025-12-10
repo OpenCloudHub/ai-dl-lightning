@@ -547,13 +547,13 @@ RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
 
 **CLI Arguments:**
 
-| Argument        | Default        | Description           |
-| --------------- | -------------- | --------------------- |
-| `--run-name`    | auto-generated | MLflow run name       |
-| `--batch-size`  | `128`          | Per-worker batch size |
-| `--lr`          | `0.001`        | Learning rate         |
-| `--max-epochs`  | `2`            | Training epochs       |
-| `--num-workers` | from config    | Number of DDP workers |
+| Argument           | Default        | Description           |
+| ------------------ | -------------- | --------------------- |
+| `--run-name`       | auto-generated | MLflow run name       |
+| `--batch-size`     | `128`          | Per-worker batch size |
+| `--lr`             | `0.001`        | Learning rate         |
+| `--max-epochs`     | `2`            | Training epochs       |
+| `--num-workers`    | from config    | Number of DDP workers |
 | `--gpu-per-worker` | from config    | Number of DDP workers |
 
 ### Serving

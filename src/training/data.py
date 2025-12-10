@@ -155,6 +155,12 @@ def load_data(
 
     logger.info(f"Normalization: mean={mean:.4f}, std={std:.4f}")
 
+    # TODO: rmove debug logs
+    logger.info(f"DEBUG train_path: {train_path}")
+    logger.info(f"DEBUG val_path: {val_path}")
+    logger.info(f"DEBUG AWS_ENDPOINT_URL: {os.getenv('AWS_ENDPOINT_URL')}")
+    logger.info(f"DEBUG DVC_REMOTE: {TRAINING_CONFIG.dvc_remote}")
+
     # Configure S3 filesystem using s3fs with SSL verification disabled
     s3_client = s3fs.S3FileSystem(
         anon=False,
@@ -167,8 +173,10 @@ def load_data(
     )
 
     # Load datasets with custom filesystem
-    train_ds = ray.data.read_parquet(train_path, filesystem=s3_client)
-    val_ds = ray.data.read_parquet(val_path, filesystem=s3_client)
+    train_ds = ray.data.read_parquet(
+        train_path, filesystem=s3_client, file_extensions=None
+    )
+    val_ds = ray.data.read_parquet(val_path, filesystem=s3_client, file_extensions=None)
 
     if limit_train:
         train_ds = train_ds.limit(limit_train)
