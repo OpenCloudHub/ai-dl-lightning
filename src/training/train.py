@@ -176,8 +176,8 @@ def train_fn_driver(train_driver_cnfg: dict) -> ray.train.Result:
     data_version = train_driver_cnfg.get("data_version")
     train_ds, val_ds, data_metrics = load_data(
         version=data_version,
-        limit_train=1000,
-        limit_val=200,  # TODO: increase or remove
+        limit_train=train_driver_cnfg.get("limit_train"),
+        limit_val=train_driver_cnfg.get("limit_val"),
     )
     # Grab a sample BEFORE training (while dataset is fresh)
     sample_batch = val_ds.take_batch(batch_size=1)
@@ -342,6 +342,19 @@ def main():
         help="Fractional GPU per worker (e.g., 0.5 for 2 workers on 1 GPU). "
         "If not set, uses 1 GPU per worker when GPUs are available.",
     )
+    parser.add_argument(
+        "--limit-train",
+        type=int,
+        default=None,
+        help="Limit training samples (None = use all)",
+    )
+    parser.add_argument(
+        "--limit-val",
+        type=int,
+        default=None,
+        help="Limit validation samples (None = use all)",
+    )
+
     args = parser.parse_args()
 
     num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers
@@ -377,6 +390,8 @@ def main():
         "data_version": workflow_tags.dvc_data_version,
         "num_workers": num_workers,
         "gpu_per_worker": gpu_per_worker,
+        "limit_train": args.limit_train,
+        "limit_val": args.limit_val,
         "train_loop_config": {
             "batch_size": args.batch_size,
             "lr": args.lr,
