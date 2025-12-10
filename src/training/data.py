@@ -178,6 +178,7 @@ def load_data(
     )
     val_ds = ray.data.read_parquet(val_path, filesystem=s3_client, file_extensions=None)
 
+    # FIXME: Temporary limits for quick testing, not for production use, no error handling for now
     if limit_train:
         train_ds = train_ds.limit(limit_train)
     if limit_val:
