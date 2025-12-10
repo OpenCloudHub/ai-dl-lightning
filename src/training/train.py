@@ -347,25 +347,16 @@ def main():
     num_workers = args.num_workers or TRAINING_CONFIG.ray_num_workers
     gpu_per_worker = args.gpu_per_worker
 
-    # Validate GPU configuration
-    num_gpus_available = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    # Note: GPU validation happens at Ray cluster level, not on head node.
+    # Head node may not have GPUs, but workers do.
+    # Ray will fail to schedule if workers don't have requested GPU resources.
     if gpu_per_worker is not None:
-        if num_gpus_available == 0:
-            logger.warning(
-                "⚠️ --gpu-per-worker specified but no GPUs available. Running on CPU."
-            )
-            gpu_per_worker = None
-        else:
-            total_gpu_requested = num_workers * gpu_per_worker
-            if total_gpu_requested > num_gpus_available:
-                raise ValueError(
-                    f"❌ Invalid GPU configuration: {num_workers} workers × {gpu_per_worker} GPU/worker "
-                    f"= {total_gpu_requested} GPUs requested, but only {num_gpus_available} available."
-                )
-            logger.info(
-                f"🎮 GPU allocation: {num_workers} workers × {gpu_per_worker} GPU = "
-                f"{total_gpu_requested}/{num_gpus_available} GPUs"
-            )
+        total_gpu_requested = num_workers * gpu_per_worker
+        logger.info(
+            f"🎮 GPU allocation requested: {num_workers} workers × {gpu_per_worker} GPU = "
+            f"{total_gpu_requested} total GPU"
+        )
+
     workflow_tags = get_workflow_tags()
 
     log_section("Training Configuration", "⚙️")
@@ -374,8 +365,7 @@ def main():
     logger.info(f"Learning rate: {args.lr}")
     logger.info(f"Max epochs: {args.max_epochs}")
     logger.info(f"Num workers: {num_workers}")
-    logger.info(f"GPU per worker: {gpu_per_worker or 'auto'}")
-    logger.info(f"GPUs available: {num_gpus_available}")
+    logger.info(f"GPU per worker: {gpu_per_worker or 'auto (CPU)'}")
 
     log_section("CI/CD Data Contract from ENV", "📋")
     logger.info(f"Argo Workflow UID: {workflow_tags.argo_workflow_uid}")
