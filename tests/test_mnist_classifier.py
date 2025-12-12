@@ -203,7 +203,6 @@ def main():
 
     except requests.exceptions.ConnectionError:
         print("❌ Cannot connect to API. Make sure Ray Serve is running:")
-        print("   serve run src.serving.serve:app")
     except Exception as e:
         print(f"❌ Test error: {e}")
 

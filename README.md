@@ -319,7 +319,7 @@ with mlflow.start_run():
 Defines the ResNet18-based classifier:
 
 ```python
-# FashionMNISTClassifier(LightningModule):
+# SimpleImageClassifier(LightningModule):
 #
 # Architecture:
 #   - ResNet18 backbone (pretrained=False for grayscale)
@@ -329,7 +329,7 @@ Defines the ResNet18-based classifier:
 # Lightning hooks:
 #   - training_step(): Forward + loss + logging
 #   - validation_step(): Metrics without gradient
-#   - configure_optimizers(): Adam with configurable LR
+#   - configure_optimizers(): AdamW with configurable LR
 #
 # Ray Train integration:
 #   - Metrics reported via self.log() → aggregated by Ray
@@ -402,7 +402,7 @@ Handles distributed data loading from DVC-versioned sources:
 Production serving with normalization consistency:
 
 ```python
-# FashionMNISTDeployment:
+# FashionMNISTClassifier (Ray Serve Deployment):
 #
 # __init__(model_uri: str):
 #     1. Load model from MLflow registry
@@ -410,11 +410,11 @@ Production serving with normalization consistency:
 #     3. Fetch normalization params from DVC (same version!)
 #     4. Store mean/std for inference preprocessing
 #
-# predict(images: List[np.ndarray]) -> List[int]:
+# predict(request: PredictionRequest) -> PredictionResponse:
 #     1. Normalize using stored mean/std
 #     2. Convert to tensor, add batch dimension
 #     3. Forward pass through model
-#     4. Return predicted class indices
+#     4. Return predictions with class names and confidences
 ```
 
 **Hot Reload for Model Updates:**
@@ -547,14 +547,16 @@ RAY_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- \
 
 **CLI Arguments:**
 
-| Argument           | Default        | Description           |
-| ------------------ | -------------- | --------------------- |
-| `--run-name`       | auto-generated | MLflow run name       |
-| `--batch-size`     | `128`          | Per-worker batch size |
-| `--lr`             | `0.001`        | Learning rate         |
-| `--max-epochs`     | `2`            | Training epochs       |
-| `--num-workers`    | from config    | Number of DDP workers |
-| `--gpu-per-worker` | from config    | Number of DDP workers |
+| Argument           | Default        | Description                                |
+| ------------------ | -------------- | ------------------------------------------ |
+| `--run-name`       | auto-generated | MLflow run name                            |
+| `--batch-size`     | `128`          | Per-worker batch size                      |
+| `--lr`             | `0.001`        | Learning rate                              |
+| `--max-epochs`     | `2`            | Training epochs                            |
+| `--num-workers`    | from config    | Number of DDP workers                      |
+| `--gpu-per-worker` | `None`         | Fractional GPU per worker (e.g., `0.5`)    |
+| `--limit-train`    | `None`         | Limit training samples (for quick tests)   |
+| `--limit-val`      | `None`         | Limit validation samples (for quick tests) |
 
 ### Serving
 

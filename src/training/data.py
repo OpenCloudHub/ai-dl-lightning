@@ -144,9 +144,6 @@ def load_data(
     )
     metadata = json.loads(metadata_content)
 
-    logger.info(f"DEBUG train_path: {train_path}")
-    logger.info(f"DEBUG val_path: {val_path}")
-
     logger.info(f"Loaded dataset: {metadata['dataset']['name']} ({version})")
 
     # Extract normalization statistics from metadata
@@ -154,12 +151,6 @@ def load_data(
     std = metadata["metrics"]["train"]["pixel_std"]
 
     logger.info(f"Normalization: mean={mean:.4f}, std={std:.4f}")
-
-    # TODO: rmove debug logs
-    logger.info(f"DEBUG train_path: {train_path}")
-    logger.info(f"DEBUG val_path: {val_path}")
-    logger.info(f"DEBUG AWS_ENDPOINT_URL: {os.getenv('AWS_ENDPOINT_URL')}")
-    logger.info(f"DEBUG DVC_REMOTE: {TRAINING_CONFIG.dvc_remote}")
 
     # Configure S3 filesystem using s3fs with SSL verification disabled
     s3_client = s3fs.S3FileSystem(
@@ -178,7 +169,7 @@ def load_data(
     )
     val_ds = ray.data.read_parquet(val_path, filesystem=s3_client, file_extensions=None)
 
-    # FIXME: Temporary limits for quick testing, not for production use, no error handling for now
+    # Apply optional limits for quick testing or debugging
     if limit_train:
         train_ds = train_ds.limit(limit_train)
     if limit_val:
